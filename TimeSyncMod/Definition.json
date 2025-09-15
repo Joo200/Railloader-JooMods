@@ -1,0 +1,7 @@
+{
+  "manifestVersion": 1,
+  "id": "Joo.TimeSyncMod",
+  "name": "TimeSync Mod",
+  "version": "0.1.0",
+  "assemblies": [ "TimeSyncMod" ]
+}
