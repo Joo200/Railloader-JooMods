@@ -1,6 +1,7 @@
 ﻿using Game;
 using Game.Messages;
 using Game.State;
+using Network;
 using UI.Console;
 
 namespace TimeSyncMod
@@ -10,9 +11,14 @@ namespace TimeSyncMod
     {
         public string Execute(string[] components)
         {
+            if (!Multiplayer.IsHost)
+            {
+                return "Only host can sync time";
+            }
+
             GameDateTime timeCursor = TimeWeather.Now;
             StateManager.ApplyLocal(new SetTimeOfDay((float)timeCursor.TotalSeconds));
-            return "synced time";
+            return "Synced time to all clients";
         }
     }
 }
