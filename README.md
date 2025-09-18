@@ -1,10 +1,23 @@
-# Railloader Example Mod
+# Railloader Timesync Mod
 
-This repository contains an example setup of how to make mods with Railloader for Railroader. It is setup as a Visual Studio solution that can contain one or more mods, with each mod having a minimal setup. The base setup itself is technically game-agnostic, i.e. could be used for other games as well (and in fact, has been used by me for other games. It's my go-to template, basically.)
+This repository contains a small mod syncing time accross clients.
+
+It is a workaround for the following bug: https://discord.com/channels/795878618697433097/1367431559459770468
+
+Use at your own risk.
+
+## Usage
+
+1. This mod automatically syncs the game time every 10 minutes sending a SetTimeOfDay message to all clients. (Visible in the console).
+2. This mod adds the command `/timesync` to trigger the time sync manually.
+
+## Contributions
+
+I happely accept contributions, e.g. a configuration or improvement for the syncs.
 
 ## Project Setup
 
-In order to get going with this template, follow the following steps:
+In order to get going with this mod, follow the following steps:
 
 1. Get a copy of this repository using your favorite approach (clone, download, copying the code by hand, ...)
 2. Copy the `Paths.user.example` to `Paths.user`, open the new `Paths.user` and set the `<GameDir>` to your game's directory.
