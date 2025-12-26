@@ -1,47 +1,52 @@
-# Railloader Timesync Mod
+# Joo's Railroader Mods
 
-This repository contains a small mod syncing time accross clients.
+This repository contains a collection of mods for the game Railroader.
 
-It is a workaround for the following bug: https://discord.com/channels/795878618697433097/1367431559459770468
+## Mods Overview
 
-Use at your own risk.
+### [TimeSync Mod](TimeSyncMod/README.md)
+A small mod that syncs game time across clients.
+- Automatically syncs every 10 minutes.
+- Adds `/timesync` command for manual synchronization.
 
-## Usage
+### [SignalsEverywhere](SignalsEverywhere/README.md)
+Extends the game's signaling logic with custom blocks, signals, and interlocking behaviors via JSON configuration.
+- Detailed documentation can be found in the [SignalsEverywhere/docs](SignalsEverywhere/docs/) folder.
 
-1. This mod automatically syncs the game time every 10 minutes sending a SetTimeOfDay message to all clients. (Visible in the console).
-2. This mod adds the command `/timesync` to trigger the time sync manually.
+### [ColorPatcher](ColorPatcher/docs/README.md)
+Allows for patching colors within the game.
 
-## Contributions
+### [InterchangeReloader](InterchangeReloader/docs/README.md)
+Provides functionality related to reloading interchanges.
 
-I happely accept contributions, e.g. a configuration or improvement for the syncs.
+### [NotEnoughRosters](NotEnoughRosters/)
+A mod to address roster limitations.
+
+---
 
 ## Project Setup
 
-In order to get going with this mod, follow the following steps:
+In order to get going with these mods, follow these steps:
 
-1. Get a copy of this repository using your favorite approach (clone, download, copying the code by hand, ...)
-2. Copy the `Paths.user.example` to `Paths.user`, open the new `Paths.user` and set the `<GameDir>` to your game's directory.
-3. Open the Solution
+1. Get a copy of this repository.
+2. Copy `Paths.user.example` to `Paths.user`, open it, and set the `<GameDir>` to your game's directory.
+3. Open the `JooMods.sln` solution.
 4. You're ready!
 
 ## Facts & Behaviours
 
-- Builds will always land directly in the correct folder (i.e. GameDirectory/Mods/_AssemblyName_).
-- You can reference assemblies in the game directory (i.e. Railroader_Data/Managed) directly and conveniently by using `<GameAssembly Include="" />`.
-- Unless you specify an `<AssemblyVersion>` yourself, it will automatically generate a version based on `<MajorVersion>` (default 1), `<MinorVersion>` (default 0), and the current year, day of year, and time.
-- Comes with a [Harmony analyzer](https://github.com/BUTR/BUTR.Harmony.Analyzer/tree/master) pre-added, so patching is less of a trial-and-error thing.
-- This solution is multi-project/multi-mod-able; i.e. you can have multiple projects inside the solution, which then all produce individual mods.
+- **Multi-project solution**: This solution is multi-project/multi-mod-able; i.e. you can have multiple projects inside the solution, which all produce individual mods.
+- **Auto-deployment**: Builds will always land directly in the correct folder (i.e. `GameDirectory/Mods/_AssemblyName_`).
+- **Assembly references**: You can reference assemblies in the game directory (i.e. `Railroader_Data/Managed`) directly and conveniently by using `<GameAssembly Include="" />`.
+- **Versioning**: Unless you specify an `<AssemblyVersion>` yourself, it will automatically generate a version based on `<MajorVersion>`, `<MinorVersion>`, and the current year, day of year, and time.
 
-## How To Use
-
-For a general guide on how Railloader works, its current functionalities and APIs, please check the [probably still not complete documentation](https://railroader.stelltis.ch/railloader/).
+## Development & Publishing
 
 ### During Development
 Make sure you're using the _Debug_ configuration. Every time you build your project, the files will be copied to your Mods folder and you can immediately start the game to test it.
 
 ### Publishing
-Make sure you're using the _Release_ configuration. The build pipeline will then automatically do a few things:
-
-1. Makes sure it's a proper release build without debug symbols
-1. Replaces `$(AssemblyVersion)` in the `Definition.json` with the actual assembly version.
-1. Copies all build outputs into a zip file inside `bin` with a ready-to-extract structure inside, named like the project they belonged to and the version of it.
+Make sure you're using the _Release_ configuration. The build pipeline will:
+1. Ensure it's a proper release build without debug symbols.
+2. Replace `$(AssemblyVersion)` in the `Definition.json` with the actual assembly version.
+3. Create a zip file in `bin` with a ready-to-extract structure.

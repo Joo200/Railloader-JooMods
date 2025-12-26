@@ -1,0 +1,198 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CTCPanelLayout",
+  "description": "Schema for CTC Panel Layout configuration files.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "panel": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/SchematicElement"
+        }
+      }
+    }
+  },
+  "required": [
+    "panel"
+  ],
+  "additionalProperties": false,
+  "definitions": {
+    "LayoutType": {
+      "type": "string",
+      "enum": [
+        "Label",
+        "Light",
+        "Track",
+        "SwitchLeftTop",
+        "SwitchRightTop",
+        "SwitchRightBottom",
+        "SwitchLeftBottom",
+        "TrackRise",
+        "TrackFall"
+      ]
+    },
+    "SchematicElement": {
+      "type": "object",
+      "properties": {
+        "X": {
+          "type": "number"
+        },
+        "Y": {
+          "type": "integer"
+        },
+        "Type": {
+          "$ref": "#/definitions/LayoutType"
+        },
+        "Id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "Block": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "SwitchLabel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "LabelOffsetX": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "LabelOffsetY": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ShowTrack": {
+          "type": "boolean",
+          "default": true
+        },
+        "Color": {
+          "type": "string",
+          "default": "white"
+        },
+        "Interlock": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/InterlockControlElement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "Crossover": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CrossoverControlElement"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "X",
+        "Y",
+        "Type"
+      ],
+      "additionalProperties": false
+    },
+    "InterlockControlElement": {
+      "type": "object",
+      "properties": {
+        "Interlock": {
+          "type": "string"
+        },
+        "VanillaSwitchKnobIds": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "VanillaDirKnobId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "KnobOrder": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "SwitchLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SignalLabel": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": ""
+        }
+      },
+      "required": [
+        "Interlock"
+      ],
+      "additionalProperties": false
+    },
+    "CrossoverControlElement": {
+      "type": "object",
+      "properties": {
+        "Crossover": {
+          "type": "string"
+        },
+        "SwitchKnobOrder": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "SignalKnobOrder": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "SwitchLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "SignalLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "Crossover"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

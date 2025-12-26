@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <MajorVersion>1</MajorVersion>
+        <MinorVersion>0</MinorVersion>
+        <Configurations>Debug;Release;PublishRelease</Configurations>
+        <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\*" />
+    </ItemGroup>
+    <ItemGroup>
+        <GameAssembly Include="Newtonsoft.Json" />
+        <GameAssembly Include="Assembly-CSharp"/>
+        <GameAssembly Include="Serilog"/>
+        <GameAssembly Include="Definition" />
+        <GameAssembly Include="Railloader.Interchange"/>
+        <GameAssembly Include="0Harmony"/>
+        <GameAssembly Include="UnityEngine.CoreModule"/>
+        <GameAssembly Include="UnityEngine.UI"/>
+        <GameAssembly Include="Unity.InputSystem"/>
+        <GameAssembly Include="Unity.TextMeshPro"/>
+        <GameAssembly Include="UnityEngine.AssetBundleModule"/>
+        <GameAssembly Include="UnityEngine.ImageConversionModule" />
+    </ItemGroup>
+    <ItemGroup>
+        <Reference Include="StrangeCustoms">
+            <HintPath>$(GameDir)\Mods\StrangeCustoms\Experimental\StrangeCustoms.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup>
+        <Reference Include="MapEnhancer">
+            <HintPath>$(GameDir)\Mods\MapEnhancer\MapEnhancer.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+</Project>

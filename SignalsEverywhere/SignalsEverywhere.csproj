@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>0</MinorVersion>
+    <Configurations>Debug;Release;PublishRelease</Configurations>
+    <Platforms>AnyCPU</Platforms>
+  </PropertyGroup>
+  <ItemGroup>
+    <GameAssembly Include="Assembly-CSharp" />
+    <GameAssembly Include="Core" />
+    <GameAssembly Include="Serilog" />
+	<GameAssembly Include="Railloader.Interchange" />
+    <GameAssembly Include="0Harmony"/>
+    <GameAssembly Include="KeyValue.Runtime"/>
+
+    <GameAssembly Include="UnityEngine.CoreModule" />
+    <GameAssembly Include="UnityEngine.UI" />
+    <GameAssembly Include="UnityEngine.UIModule" />
+    <GameAssembly Include="UnityEngine.AudioModule" />
+    <GameAssembly Include="UnityEngine.InputLegacyModule" />
+    <GameAssembly Include="UnityEngine.TextRenderingModule"/>
+    <GameAssembly Include="UnityEngine.PhysicsModule"/>
+    <GameAssembly Include="UnityEngine.AnimationModule"/>
+    <GameAssembly Include="Unity.InputSystem"/>
+    <GameAssembly Include="Unity.TextMeshPro"/>
+    <GameAssembly Include="Newtonsoft.Json"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="StrangeCustoms">
+      <HintPath>$(GameDir)\Mods\StrangeCustoms\Experimental\StrangeCustoms.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\CTCPanel-MainLine.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>CTCPanel-MainLine.json</TargetPath>      
+    </Content>
+    <Content Include="Resources\ctc-panel-layout.schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>ctc-panel-layout.schema.json</TargetPath>
+    </Content>
+    <Content Include="Resources\signals.schema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>signals.schema.json</TargetPath>
+    </Content>
+    <Content Include="docs/*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="README.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

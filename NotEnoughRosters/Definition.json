@@ -1,0 +1,9 @@
+{
+  "manifestVersion": 1,
+  "id": "Joo.NotEnoughRosters",
+  "name": "NotEnoughRosters",
+  "version": "$(AssemblyVersion)",
+  "assemblies": [
+    "NotEnoughRosters"
+  ]
+}

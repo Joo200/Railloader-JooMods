@@ -1,0 +1,21 @@
+{
+  "manifestVersion": 1,
+  "id": "Joo.ColorPatcher",
+  "name": "ColorPatcher Mod",
+  "version": "$(AssemblyVersion)",
+  "assemblies": [ "ColorPatcher" ],
+  "requires": [
+    {
+      "id": "railroader",
+      "notBefore": "2024.6.10"
+    },
+    {
+      "id": "railloader",
+      "notBefore": "1.10.0.2"
+    },
+    {
+      "id": "Zamu.StrangeCustoms",
+      "notBefore": "1.10.25017.313"
+    }
+  ]
+}

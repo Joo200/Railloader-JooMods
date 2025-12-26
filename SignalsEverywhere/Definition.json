@@ -1,0 +1,13 @@
+{
+  "manifestVersion": 1,
+  "id": "Joo.SignalsEverywhere",
+  "name": "SignalsEverywhere Mod",
+  "version": "$(AssemblyVersion)",
+  "assemblies": [ "SignalsEverywhere" ],
+  "requires": [ "Zamu.StrangeCustoms" ],
+  "mixintos": {
+    "ctcPanel": [
+      "file(CTCPanel-MainLine.json)"
+    ]
+  }
+}

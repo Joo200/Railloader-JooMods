@@ -1,0 +1,27 @@
+{
+  "manifestVersion": 1,
+  "id": "Joo.InterchangeReloader",
+  "name": "InterchangeReloader Mod",
+  "version": "$(AssemblyVersion)",
+  "assemblies": [ "InterchangeReloader" ],
+  "requires": [
+    {
+      "id": "railroader",
+      "notBefore": "2024.6.10"
+    },
+    {
+      "id": "railloader",
+      "notBefore": "1.10.0.2"
+    },
+    {
+      "id": "Zamu.StrangeCustoms",
+      "notBefore": "1.10.25017.313"
+    }
+  ],
+  "loadAfter": [
+    {
+      "id": "Zamu.SomeKindOfMadness", 
+      "notBefore": "1.4.24366.2150"
+    }
+  ]
+}
