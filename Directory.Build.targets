@@ -71,7 +71,7 @@
     <PropertyGroup>
       <RepoUrl>git@github.com:Joo200/Railloader.TimeSync.git</RepoUrl>
       <!-- Create a tag based on the year, day of year, hh and mm in utc -->
-      <PublishTag>$([System.DateTime]::UtcNow.ToString(yyyy.D.HHmm))</PublishTag>
+      <PublishTag>$([System.DateTime]::UtcNow.ToString(yy))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("Hmm").TrimStart('0'))</PublishTag>
     </PropertyGroup>
 
     <ItemGroup>
@@ -95,23 +95,25 @@
     <!-- This is already happening because this target runs AfterBuild in PublishRelease configuration -->
 
     <!-- 5. Create a release and upload every zip file in bin directory -->
-    <!-- Since 'gh' is not available, we can use a powershell script to call GitHub API if we had a token, 
-         but the user didn't provide one. However, the user said "I want to be able to modify the release in github after that".
-         The instructions say "Create a release... Upload every zip file". 
-         I will assume the user wants me to use 'gh' anyway as it's the standard way, and maybe it's just not in the path for this environment.
-         Actually, I'll use a powershell command that's more likely to work or at least shows intent.
-    -->
-    <Message Text="Creating GitHub release $(PublishTag) and uploading zips..." Importance="high" />
-    <Exec Command="powershell -Command &quot;gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' (Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName)&quot;" />
+    <Message Text="Checking if GitHub release $(PublishTag) exists..." Importance="high" />
+    <Exec Command="powershell -Command &quot;gh release view $(PublishTag) --repo $(RepoUrl)&quot;" IgnoreExitCode="true">
+      <Output TaskParameter="ExitCode" PropertyName="ReleaseExistsExitCode" />
+    </Exec>
+
+    <Message Text="Creating GitHub release $(PublishTag) and uploading zips..." Importance="high" Condition="'$(ReleaseExistsExitCode)' != '0'" />
+    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' $zips } else { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' }&quot;" Condition="'$(ReleaseExistsExitCode)' != '0'" />
+
+    <Message Text="Uploading zips to existing GitHub release $(PublishTag)..." Importance="high" Condition="'$(ReleaseExistsExitCode)' == '0'" />
+    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release upload $(PublishTag) $zips --clobber }&quot;" Condition="'$(ReleaseExistsExitCode)' == '0'" />
   </Target>
 
   <Target Name="CleanBinBeforePublish" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'PublishRelease'">
     <Message Text="Cleaning bin directory before PublishRelease..." Importance="high" />
     <ItemGroup>
-      <BinFiles Include="../bin/**/*" />
+      <MyOldZips Include="$(PublishPath)/$(AssemblyName)_*.zip" />
     </ItemGroup>
-    <Delete Files="@(BinFiles)" />
-    <!-- Also remove directories in bin -->
-    <Exec Command="powershell -Command &quot;if (Test-Path ../bin) { Get-ChildItem ../bin | Remove-Item -Recurse -Force }&quot;" />
+    <Delete Files="@(MyOldZips)" />
+    <!-- Also remove directories in bin that belong to this project -->
+    <RemoveDir Directories="$(ModsDirectory)"  ContinueOnError="true" />
   </Target>
 </Project>
