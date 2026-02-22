@@ -1,10 +1,36 @@
-﻿# Railroader CTC Signal Creation Guide
+﻿# Signals Everywhere
 
-This guide explains how to define new signaled sections, blocks, and interlocking behaviors using the `signals.json` configuration file. This system allows you to extend the game's signaling logic by defining physical track occupation areas (Blocks), signal placements, and the logic that connects them (Intermediates and Interlockings).
+Signals Everywhere is a comprehensive signaling and traffic control mod for Railroader. It extends the game's signaling logic, allowing you to define custom signaled sections, blocks, and complex interlocking behaviors. Whether you want to add signals to a new branch or create a fully functional Centralized Traffic Control (CTC) system, Signals Everywhere provides the tools to do it.
+
+## Key Features
+
+-   **Custom Signal Placement**: Define new automatic and predicate-based signals anywhere on your layout.
+-   **Advanced Block Detection**: Define physical track occupation areas (Blocks) for precise train detection.
+-   **Interlocking Management**: Create complex junctions and routing logic to manage traffic through busy areas.
+-   **CTC Panel**: A fully functional, interactive Centralized Traffic Control panel. Monitor block occupancy, throw switches, and clear signals from a centralized window.
+-   **New Signal Types**: Includes support for multi-head signals (Single, Double, Triple) with customizable logic.
+-   **Configurable via JSON**: All signals, blocks, and panels are defined in easy-to-edit `json` files.
 
 ---
 
-## 1. File Structure
+## 1. Getting Started
+
+This mod allows you to extend the game's signaling logic by defining physical track occupation areas (Blocks), signal placements, and the logic that connects them (Intermediates and Interlockings) using the signals mixins.
+
+Declare the mixin in your mod's `Definition.json` file like this:
+```json
+{
+  "id": "ExampleMod",
+  ...
+  "mixintos": {
+    "game-graphs": [ "file(my-game-graph.json)"],
+    "signals": [ "file(my-signals.json)" ],
+    "ctcPanel": [ "file(my-ctc-panel.json)" ]
+  }
+}
+```
+
+### File Structure
 
 The configuration is organized into a hierarchy:
 1.  **Section (Group)**: A high-level collection of related modules (e.g., "Mainline-East").
@@ -29,7 +55,18 @@ The configuration is organized into a hierarchy:
 
 ---
 
-## 2. Component Documentation
+## 2. Centralized Traffic Control (CTC)
+
+The CTC Panel is a core feature of Signals Everywhere. It provides a schematic view of your railroad, allowing for remote operation.
+
+-   **Interactive Schematic**: View real-time occupancy of blocks and the status of signals and switches.
+-   **Remote Control**: Throw switches and set signal directions directly from the panel.
+-   **Custom Layouts**: Define your own CTC panel layouts to match your specific track arrangements using `ctc-panel-layout.json`.
+-   **System Modes**: Switch between ABS (Automatic Block Signaling) and CTC modes via the mod options.
+
+---
+
+## 3. Component Documentation
 
 Detailed documentation for each component can be found in the `docs/` directory:
 
@@ -41,7 +78,7 @@ Detailed documentation for each component can be found in the `docs/` directory:
 
 ---
 
-## 3. Summary Tips
+## 4. Summary Tips
 
 1.  **Unique IDs**: Ensure every `block` and `signal` has a unique ID across the entire file.
 2.  **Directionality**: `Left` and `Right` are relative to the track's internal direction. If a signal is facing "the wrong way," check the `direction` and `location.end` properties.
@@ -49,7 +86,7 @@ Detailed documentation for each component can be found in the `docs/` directory:
 
 ---
 
-## 4. FAQ
+## 5. FAQ
 
 ### Can you help me setting up signals on my branch?
 
@@ -57,8 +94,8 @@ No. I don't have the time to write signal support for every branch. You can ask 
 
 ### Can I look into an example for signals? How can I report bugs?
 
-TODO: -- Insert the correct link here. 
-This signal mod was developed for the branch [Macon County](https://nexusmodes.com/). You can download and look into the signals file.
+This signal mod was developed for the branch [Macon County](https://nexusmods.com/). You can download it to see an example of a complete `signals.json` and `CTCPanel-MainLine.json` configuration.
+Reports bugs on the [GitHub Issues](https://github.com/Joo200/Railloader.TimeSync/issues) page.
 
 ### Can I modify existing signals from the base game?
 
@@ -74,5 +111,5 @@ There is a drop down list in the mod options to show block positions.
 
 ### Blocks don't detect trains, how to fix it?
 
-Make sure the block has correct locaitons. Try to switch the `end` value of one end position.
+Make sure the block has correct locations. Try to switch the `end` value of one end position.
 
