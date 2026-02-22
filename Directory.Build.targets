@@ -95,16 +95,8 @@
     <!-- This is already happening because this target runs AfterBuild in PublishRelease configuration -->
 
     <!-- 5. Create a release and upload every zip file in bin directory -->
-    <Message Text="Checking if GitHub release $(PublishTag) exists..." Importance="high" />
-    <Exec Command="powershell -Command &quot;gh release view $(PublishTag) --repo $(RepoUrl)&quot;" IgnoreExitCode="true">
-      <Output TaskParameter="ExitCode" PropertyName="ReleaseExistsExitCode" />
-    </Exec>
-
-    <Message Text="Creating GitHub release $(PublishTag) and uploading zips..." Importance="high" Condition="'$(ReleaseExistsExitCode)' != '0'" />
-    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' $zips } else { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' }&quot;" Condition="'$(ReleaseExistsExitCode)' != '0'" />
-
-    <Message Text="Uploading zips to existing GitHub release $(PublishTag)..." Importance="high" Condition="'$(ReleaseExistsExitCode)' == '0'" />
-    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release upload $(PublishTag) $zips --clobber }&quot;" Condition="'$(ReleaseExistsExitCode)' == '0'" />
+    <Message Text="Publishing to GitHub release $(PublishTag)..." Importance="high" />
+    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName; if ($zips) { if (gh release view $(PublishTag) --repo $(RepoUrl) 2&gt;%24null) { gh release upload $(PublishTag) $zips --clobber --repo $(RepoUrl) } else { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' $zips --repo $(RepoUrl) --error-if-exists 2&gt;%24null; if ($LASTEXITCODE -ne 0) { gh release upload $(PublishTag) $zips --clobber --repo $(RepoUrl) } } } else { if (-not (gh release view $(PublishTag) --repo $(RepoUrl) 2&gt;%24null)) { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' --repo $(RepoUrl) 2&gt;%24null } }&quot;" />
   </Target>
 
   <Target Name="CleanBinBeforePublish" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'PublishRelease'">
