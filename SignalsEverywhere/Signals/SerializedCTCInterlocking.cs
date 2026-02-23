@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using StrangeCustoms.Tracks;
 using Track;
 using Track.Signals;
 using UnityEngine;
@@ -64,10 +65,10 @@ public class SerializedCTCInterlocking
             ctx.Logger.Error("Interlocking has no ID");
             return;
         }
-        CTCInterlocking interlocking = parent.AddComponent<CTCInterlocking>();
+        CTCInterlocking interlocking = parent.GetComponent<CTCInterlocking>() ?? parent.AddComponent<CTCInterlocking>();
         interlocking.id = Id;
         interlocking.displayName = DisplayName;
-        ctx.Interlockings.Add(Id, interlocking);
+        ctx.Interlockings[Id] = interlocking;
     }
 
     public void ApplyTo(CTCInterlocking interlocking, CTCPatchingContext ctx)

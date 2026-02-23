@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using StrangeCustoms.Tracks;
 using Track.Signals;
 
@@ -15,6 +16,11 @@ public class CTCPatchingContext(Serilog.ILogger logger, IReadOnlyDictionary<stri
     public Dictionary<string, CTCAutoSignal> AutoSignals { get; set; } = new();
     public Dictionary<string, CTCBlock> Blocks { get; set; } = new();
 
+    public bool ElementModified(string key)
+    {
+        return TouchedKeys.Keys.Any(s => s.ToLower().StartsWith(key.ToLower()));
+    }
+    
     public CTCSignal? GetSignal(string? id)
     {
         if (string.IsNullOrEmpty(id)) return null;

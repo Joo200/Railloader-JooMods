@@ -26,7 +26,7 @@ public class SerializedCTCIntermediate
 
     public void CreateFor(GameObject parent, CTCPatchingContext ctx)
     {
-        CTCIntermediate intermediate = parent.AddComponent<CTCIntermediate>();
+        CTCIntermediate intermediate = parent.GetComponent<CTCIntermediate>() ?? parent.AddComponent<CTCIntermediate>();
         intermediate.name = Id;
         ctx.Intermediates[Id] = intermediate;
     }

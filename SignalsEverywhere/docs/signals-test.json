@@ -1,0 +1,406 @@
+{
+  "BR-HW": {
+    "BR-HW 1": {
+      "blocks": {
+        "bryson-ww1": {
+          "id": "bryson-ww1",
+          "spans": {
+            "$replace": [
+              {
+                "upper": {
+                  "SegmentId": "Sx8od",
+                  "Distance": 53.67025,
+                  "end": "Start"
+                },
+                "lower": {
+                  "SegmentId": "1q3x49",
+                  "Distance": 5.89790344,
+                  "end": "Start"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "BR-EL-GI-WH": {
+    "BR-W": {
+      "blocks": {
+        "bryson-w": {
+          "id": "bryson-w",
+          "spans": {
+            "$replace": [
+              {
+                "upper": {
+                  "segmentId": "Solj",
+                  "distance": 0.128374174,
+                  "end": "Start"
+                },
+                "lower": {
+                  "segmentId": "1q3x49",
+                  "distance": 60,
+                  "end": "End"
+                }
+              },
+              {
+                "upper": {
+                  "segmentId": "Sitz",
+                  "distance": 52.9922943,
+                  "end": "Start"
+                },
+                "lower": {
+                  "segmentId": "S8it",
+                  "distance": 187.062988,
+                  "end": "End"
+                }
+              },
+              {
+                "upper": {
+                  "segmentId": "Sq6w",
+                  "distance": 50,
+                  "end": "End"
+                },
+                "lower": {
+                  "segmentId": "Satq",
+                  "distance": 65,
+                  "end": "Start"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "AutoSignals": {
+        "br-wm": {
+          "InterlockingRouteMapping": {
+            "$replace": [
+              0,
+              2
+            ]
+          },
+          "HeadConfiguration": "Double"
+        },
+        "br-ws": {
+          "InterlockingRouteMapping": {
+            "$replace": [
+              1,
+              3
+            ]
+          },
+          "HeadConfiguration": "Double"
+        }
+      },
+      "PredicateSignals": {
+        "br-we": {
+          "Location": {
+            "SegmentId": "1q3x49",
+            "Distance": 60,
+            "end": "End"
+          },
+          "Heads": [
+            {
+              "$index": 0,
+              "Predicates": [
+                {
+                  "$add": {
+                    "type": "Switch",
+                    "SwitchNode": "7u8d09",
+                    "switchSetting": "Normal",
+                    "Blocks": [],
+                    "Interlocking": null,
+                    "direction": "None"
+                  }
+                }
+              ]
+            },
+            {
+              "$index": 1,
+              "Predicates": [
+                {
+                  "$add": {
+                    "type": "Switch",
+                    "SwitchNode": "7u8d09",
+                    "switchSetting": "Normal",
+                    "Blocks": [],
+                    "Interlocking": null,
+                    "direction": "None"
+                  }
+                }
+              ]
+            },
+            {
+              "$index": 2,
+              "Predicates": [
+                {
+                  "$add": {
+                    "type": "Switch",
+                    "SwitchNode": "7u8d09",
+                    "switchSetting": "Normal",
+                    "Blocks": [],
+                    "Interlocking": null,
+                    "direction": "None"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "br-w-fo": {
+          "heads": [
+            {
+              "predicates": [
+                {
+                  "type": "Switch",
+                  "switchNode": "Nx1u",
+                  "switchSetting": "Normal",
+                  "blocks": [],
+                  "interlocking": null,
+                  "direction": "None"
+                },
+                {
+                  "type": "Switch",
+                  "SwitchNode": "7u8d09",
+                  "switchSetting": "Reversed",
+                  "Blocks": [],
+                  "Interlocking": null,
+                  "direction": "None"
+                },
+                {
+                  "type": "InterlockingTrafficDirection",
+                  "switchNode": null,
+                  "switchSetting": "Normal",
+                  "blocks": [],
+                  "interlocking": "br-w",
+                  "direction": "Right"
+                },
+                {
+                  "type": "Block",
+                  "switchNode": null,
+                  "switchSetting": "Normal",
+                  "blocks": [
+                    "bryson-w",
+                    "br-m-em",
+                    "br-m-mm",
+                    "bryson-wm"
+                  ],
+                  "interlocking": null,
+                  "direction": "Left"
+                },
+                {
+                  "type": "InterlockingTrafficDirectionIsNot",
+                  "switchNode": "qefeuz",
+                  "switchSetting": "Normal",
+                  "blocks": [
+                    "br-m-em",
+                    "br-m-mm",
+                    "bryson-wm"
+                  ],
+                  "interlocking": "br-e",
+                  "direction": "Left"
+                },
+                {
+                  "type": "Switch",
+                  "SwitchNode": "7u8d09",
+                  "switchSetting": "Normal",
+                  "Blocks": [],
+                  "Interlocking": null,
+                  "direction": "None"
+                }
+              ],
+              "nextCtcSignal": "br-em"
+            },
+            {
+              "predicates": [
+                {
+                  "type": "Switch",
+                  "switchNode": "Nx1u",
+                  "switchSetting": "Reversed",
+                  "blocks": [],
+                  "interlocking": null,
+                  "direction": "None"
+                },
+                {
+                  "type": "Switch",
+                  "SwitchNode": "7u8d09",
+                  "switchSetting": "Reversed",
+                  "Blocks": [],
+                  "Interlocking": null,
+                  "direction": "None"
+                },
+                {
+                  "type": "InterlockingTrafficDirection",
+                  "switchNode": null,
+                  "switchSetting": "Reversed",
+                  "blocks": [],
+                  "interlocking": "br-w",
+                  "direction": "Right"
+                },
+                {
+                  "type": "Block",
+                  "switchNode": "qefeuz",
+                  "switchSetting": "Reversed",
+                  "blocks": [
+                    "bryson-w",
+                    "br-m-es",
+                    "br-m-ms",
+                    "bryson-ws"
+                  ],
+                  "interlocking": "br-e",
+                  "direction": "Left"
+                },
+                {
+                  "type": "InterlockingTrafficDirectionIsNot",
+                  "switchNode": "qefeuz",
+                  "switchSetting": "Reversed",
+                  "blocks": [
+                    "br-m-em",
+                    "br-m-mm",
+                    "bryson-wm"
+                  ],
+                  "interlocking": "br-e",
+                  "direction": "Left"
+                },
+                {
+                  "type": "Switch",
+                  "SwitchNode": "7u8d09",
+                  "switchSetting": "Normal",
+                  "Blocks": [],
+                  "Interlocking": null,
+                  "direction": "None"
+                }
+              ],
+              "nextCtcSignal": "br-es"
+            },
+            {
+              "predicates": [
+                {
+                  "type": "Switch",
+                  "SwitchNode": "7u8d09",
+                  "switchSetting": "Reversed",
+                  "Blocks": [],
+                  "Interlocking": null,
+                  "direction": "None"
+                },
+                {
+                  "type": "InterlockingTrafficDirection",
+                  "switchNode": null,
+                  "switchSetting": "Reversed",
+                  "blocks": [],
+                  "interlocking": "br-w",
+                  "direction": "Right"
+                },
+                {
+                  "type": "Block",
+                  "switchNode": null,
+                  "switchSetting": "Reversed",
+                  "blocks": [
+                    "bryson-w"
+                  ],
+                  "interlocking": "br-w",
+                  "direction": "Right"
+                },
+                {
+                  "type": "Switch",
+                  "SwitchNode": "7u8d09",
+                  "switchSetting": "Normal",
+                  "Blocks": [],
+                  "Interlocking": null,
+                  "direction": "None"
+                }
+              ],
+              "nextCtcSignal": null
+            }
+          ],
+          "headConfiguration": "Triple",
+          "direction": "Right",
+          "location": {
+            "segmentId": "Satq",
+            "distance": 65,
+            "end": "Start"
+          },
+          "leftSide": false,
+          "offset": 3
+        }
+      },
+      "Interlocking": {
+        "Id": "br-w",
+        "DisplayName": "Bryson West",
+        "SwitchSets": {
+          "$replace": [
+            [
+              "Nx1u"
+            ],
+            [
+              "7u8d09"
+            ]
+          ]
+        },
+        "Outlets": {
+          "$replace": [
+            {
+              "Direction": "Right",
+              "Blocks": [],
+              "NextSignal": "br-em"
+            },
+            {
+              "Direction": "Right",
+              "Blocks": [],
+              "NextSignal": "br-es"
+            },
+            {
+              "Direction": "Left",
+              "Blocks": [
+                "bryson-ww1"
+              ],
+              "NextSignal": "bryson-ww-w"
+            },
+            {
+              "Direction": "Left",
+              "Blocks": [
+                "br-fo"
+              ],
+              "NextSignal": "br-fo-w1"
+            }
+          ]
+        },
+        "Routes": {
+          "$replace": [
+            {
+              "SwitchFilters": [
+                "Normal",
+                "Normal"
+              ],
+              "OutletLeft": 2,
+              "OutletRight": 0
+            },
+            {
+              "SwitchFilters": [
+                "Reversed",
+                "Normal"
+              ],
+              "OutletLeft": 2,
+              "OutletRight": 1
+            },
+            {
+              "SwitchFilters": [
+                "Normal",
+                "Reversed"
+              ],
+              "OutletLeft": 3,
+              "OutletRight": 0
+            },
+            {
+              "SwitchFilters": [
+                "Reversed",
+                "Reversed"
+              ],
+              "OutletLeft": 3,
+              "OutletRight": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

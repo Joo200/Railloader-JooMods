@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using StrangeCustoms.Tracks;
 using Track;
 using Track.Signals;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SignalsEverywhere.Signals;
 
@@ -37,8 +39,17 @@ public class SerializedCTCBlock
             var type = typeof(SerializedSpan);
             trackSpan.id = $"{parent.name}-span-{index}";
             trackSpan.name = $"{parent.name}-span-{index}";
-            type.GetMethod("ApplyTo", BindingFlags.NonPublic | BindingFlags.Instance)
-                .Invoke(serializedSpan, [trackSpan.name, ctx, trackSpan]);
+            try
+            {
+                type.GetMethod("ApplyTo", BindingFlags.NonPublic | BindingFlags.Instance)
+                    .Invoke(serializedSpan, [trackSpan.name, ctx, trackSpan]);
+            }
+            catch (Exception e)
+            {
+                ctx.Logger.Error(e, $"Failed to apply span {index}");
+                Object.DestroyImmediate(trackSpan);
+            }
+            
         }
         
         ctx.Blocks[Id] = ctcBlock;

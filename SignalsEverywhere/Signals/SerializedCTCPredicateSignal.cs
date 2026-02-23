@@ -10,7 +10,8 @@ namespace SignalsEverywhere.Signals;
 public class SerializedCTCPredicateSignal : SerializedCTCSignal
 {
     private static CTCPredicateSignal? _triplePrefab => Object.FindObjectsOfType<CTCPredicateSignal>(true)
-        .FirstOrDefault(s => s.headConfiguration == SignalHeadConfiguration.Triple);
+        .FirstOrDefault(s =>
+            s.headConfiguration == SignalHeadConfiguration.Triple && s.modelController.semaphoreHeads.Count == 3);
 
     private static CTCPredicateSignal? _doublePrefab => Object.FindObjectsOfType<CTCPredicateSignal>(true)
         .FirstOrDefault(s => s.headConfiguration == SignalHeadConfiguration.Double);
@@ -31,6 +32,7 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
         public CTCPredicateSignal.HeadPredicates Apply(CTCPatchingContext ctx)
         {
             CTCPredicateSignal.HeadPredicates headPredicates = new();
+            headPredicates.predicates = new();
             foreach (var predicate in Predicates)
             {
                 headPredicates.predicates.Add(predicate.Apply(ctx));
@@ -43,10 +45,10 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
     public struct Predicate
     {
         public CTCPredicateSignal.PredicateType Type { get; set; }
-        public string SwitchNode { get; set; }
+        public string? SwitchNode { get; set; }
         public SwitchSetting SwitchSetting { get; set; }
-        public List<string> Blocks { get; set; }
-        public string Interlocking { get; set; }
+        public List<string>? Blocks { get; set; }
+        public string? Interlocking { get; set; }
         public SignalDirection Direction { get; set; }
         
         public Predicate() {}
@@ -65,10 +67,10 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
         {
             CTCPredicateSignal.Predicate predicate = new CTCPredicateSignal.Predicate();
             predicate.type = Type;
-            predicate.switchNode = Graph.Shared.GetNode(SwitchNode);
+            predicate.switchNode = SwitchNode != null ? Graph.Shared.GetNode(SwitchNode) : null;
             predicate.switchSetting = SwitchSetting;
             predicate.blocks = ctx.GetBlocks(Blocks);
-            predicate.interlocking = ctx.Interlockings[Interlocking];
+            predicate.interlocking = Interlocking != null ? ctx.Interlockings[Interlocking] : null;
             predicate.direction = Direction;
             return predicate;
         }

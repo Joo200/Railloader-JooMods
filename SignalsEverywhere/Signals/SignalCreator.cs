@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using HarmonyLib;
 using Helpers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
-using Railloader;
+using Newtonsoft.Json.Serialization;
+using SignalsEverywhere.Patching;
 using Track;
 using Track.Signals;
 using UnityEngine;
@@ -18,39 +18,58 @@ namespace SignalsEverywhere.Signals;
 public class SignalCreator
 {
     private static readonly Serilog.ILogger logger = Serilog.Log.ForContext<SignalCreator>();
+
+    public JsonSerializer Serializer;
+    
+    public JObject? OriginalData { get; private set; }
+    public JObject? PatchedData { get; private set; }
     
     private SignalsEverywhere _instance;
-    
-    private Dictionary<string, Dictionary<string, SerializedCTCModule>> _markers = new();
-    private IReadOnlyDictionary<string, string>? _touchers = new Dictionary<string, string>();
     
     public SignalCreator(SignalsEverywhere instance)
     {
         _instance = instance;
+        JsonSerializerSettings serializerSettings = new JsonSerializerSettings();
+        DefaultContractResolver contractResolver = new DefaultContractResolver();
+        CamelCaseNamingStrategy caseNamingStrategy = new CamelCaseNamingStrategy();
+        caseNamingStrategy.ProcessDictionaryKeys = false;
+        contractResolver.NamingStrategy = caseNamingStrategy;
+        serializerSettings.ContractResolver = contractResolver;
+        serializerSettings.Converters = new List<JsonConverter>(2)
+        {
+            new Vector3Converter(),
+            new StringEnumConverter()
+        };
+        Serializer = JsonSerializer.CreateDefault(serializerSettings);
     }
 
-    public void CreateSignals(IEnumerable<ModMixinto> mixintos, CTCPanelController instance)
+    public void CreateSignals(PatchHelper mergedJson, CTCPanelController instance)
     {
-        var mergedJson = new JObject();
-        foreach (var modMixinto in mixintos)
+        List<string> keys = mergedJson.Value.Properties().Select(p => p.Name).ToList();
+        Transform? root = GetCtcRoot(instance);
+        if (root == null)
         {
-            var json = JObject.Parse(File.ReadAllText(modMixinto.Mixinto));
-            if (json == null)
-            {
-                logger.Warning($"Failed to parse mixinto {modMixinto.Mixinto} for signals");
-                continue;
-            }
-            mergedJson.Merge(json, new JsonMergeSettings { MergeArrayHandling = MergeArrayHandling.Union, MergeNullValueHandling = MergeNullValueHandling.Ignore });
-        }
-
-        mergedJson.Remove("$schema");
-        _markers = mergedJson.ToObject<Dictionary<string, Dictionary<string, SerializedCTCModule>>>();
-        if (_markers == null)
-        {
-            logger.Warning($"Failed to parse mixintos for signals");
+            logger.Error("Couldn't find CTC root");
             return;
         }
-        PrepareFeatures(instance);
+        // var jsonRoot = Deserialize(root);
+        foreach (var section in keys)
+        {
+            var old = root.Find(section + " Module");
+            if (old != null)
+            {
+                if (old.gameObject.GetComponent<CTCMapFeatureTarget>() == null)
+                    old.gameObject.AddComponent<CTCMapFeatureTarget>();
+                logger.Debug($"Found existing feature target '{section} Module'");
+            }
+            else
+            {
+                GameObject go = new GameObject(section + " Module");
+                go.transform.SetParent(root, false);
+                go.AddComponent<CTCMapFeatureTarget>();
+                logger.Debug($"Creating feature target '{section} Module'");
+            }
+        }
     }
 
     private Transform? GetCtcRoot(CTCPanelController instance)
@@ -64,9 +83,9 @@ public class SignalCreator
         return storage.transform;
     }
 
-    private CTCPatchingContext CreateContext()
+    private CTCPatchingContext CreateContext(IReadOnlyDictionary<string, string>? touchers = null)
     {
-        CTCPatchingContext ctx = new CTCPatchingContext(logger, _touchers);
+        CTCPatchingContext ctx = new CTCPatchingContext(logger, touchers);
         foreach (CTCBlock block in Object.FindObjectsByType<CTCBlock>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             ctx.Blocks[block.id] = block;
         foreach (CTCPredicateSignal signal in Object.FindObjectsByType<CTCPredicateSignal>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -91,33 +110,6 @@ public class SignalCreator
         return ctx;
     }
 
-    private void PrepareFeatures(CTCPanelController instance)
-    {
-        Transform? root = GetCtcRoot(instance);
-        if (root == null)
-        {
-            logger.Error("Couldn't find CTC root");
-            return;
-        }
-        // var jsonRoot = Deserialize(root);
-        foreach (var section in _markers)
-        {
-            var existing = root.Find(section.Key + " Module");
-            if (existing != null)
-            {
-                logger.Information($"Destroying existing feature target '{section.Key} Module'");
-                existing.DestroyAllChildren();
-                Object.Destroy(existing);
-            }
-            
-            GameObject go = new GameObject(section.Key + " Module");
-            go.transform.SetParent(root, false);
-
-            logger.Information($"Creating feature target '{section.Key} Module'");
-            go.AddComponent<CTCMapFeatureTarget>();
-        }
-    }
-
     public JObject? Deserialize()
     {
         Transform? root = GetCtcRoot(CTCPanelController.Shared);
@@ -134,16 +126,18 @@ public class SignalCreator
         Dictionary<string, Dictionary<string, SerializedCTCModule>> features = new();
         foreach (var featureTarget in root.GetComponentsInChildren<CTCMapFeatureTarget>(true))
         {
-            var name = featureTarget.gameObject.name;
+            var name = featureTarget.gameObject.name.Replace(" Module", "");
+            logger.Debug($"Found feature target: {name}");
             Dictionary<string, SerializedCTCModule> modules = new();
             for (int i = 0; i < featureTarget.transform.childCount; i++)
             {
+                logger.Debug($"Deserializing module {featureTarget.transform.GetChild(i).name}");
                 var dir = featureTarget.transform.GetChild(i);
                 modules.Add(dir.name, new SerializedCTCModule(dir.gameObject));
             }
             features.Add(name, modules);
         }
-        return JObject.FromObject(features);
+        return JObject.FromObject(features, Serializer);
     }
 
     public void BuildSignals(CTCPanelController instance)
@@ -154,12 +148,20 @@ public class SignalCreator
             logger.Error("Couldn't find CTC root");
             return;
         }
+        
+        OriginalData = Deserialize(root);
+        var patched = SignalsEverywhere.Shared.GetMixintoJson("signals", OriginalData);
 
-        var ctx = CreateContext();
-
+        PatchedData = patched.Value;
+        var ctx = CreateContext(patched.TouchedByPath);
+        
         List<GameObject> gos = new();
 
-        foreach (var section in _markers)
+        var result = patched.Value.ToObject<Dictionary<string, Dictionary<string, SerializedCTCModule>>>();
+        if (result == null)
+            throw new Exception("Couldn't deserialize signals");
+        
+        foreach (var section in result)
         {
             var go = root.Find(section.Key + " Module");
             if (go == null)
@@ -169,15 +171,26 @@ public class SignalCreator
             }
             foreach (var module in section.Value)
             {
-                gos.Add(CreateModule(go, ctx, module.Key, module.Value, "signals." + section.Key + "." + module.Key));
+                if (ctx.ElementModified(section.Key + "." + module.Key))
+                {
+                    gos.Add(CreateModule(go, ctx, module.Key, module.Value, section.Key + "." + module.Key));
+                }
             }
         }
 
-        foreach (var section in _markers)
+        foreach (var section in result)
         {
             foreach (var module in section.Value)
             {
-                module.Value.Finalize(ctx);
+                if (ctx.ElementModified(section.Key + "." + module.Key))
+                {
+                    if (root.Find(section.Key) != null)
+                    {
+                        logger.Error($"Duplicate module id {section.Key}, patching existing modules is not allowed yet.");
+                        continue;
+                    }
+                    module.Value.Finalize(ctx, section.Key + "." + module.Key);
+                }
             }
         }
         
@@ -199,11 +212,21 @@ public class SignalCreator
     private GameObject CreateModule(Transform root, CTCPatchingContext ctx, string id, SerializedCTCModule module, string jsonPath)
     {
         module.Id = id;
+        GameObject go;
+        if (root.Find(id) != null)
+        {
+            logger.Debug($"Reusing module {id}");
+            go = root.Find(id).gameObject;
+            go.SetActive(false);
+        }
+        else
+        {
+            logger.Debug($"Creating module {id}");
+            go = new GameObject(id);
+            go.SetActive(false);
+            go.transform.SetParent(root, false);
+        }
         
-        GameObject go = new GameObject(id + " Module");
-        go.SetActive(false);
-        go.transform.SetParent(root, false);
-
         try
         {
             module.Initialize(go, ctx, jsonPath);

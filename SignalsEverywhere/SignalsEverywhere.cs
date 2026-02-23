@@ -88,7 +88,7 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
             return;
         }
         logger.Information("Patching signals");
-        _signalCreator.CreateSignals(GetMixintos("signals"), instance);
+        _signalCreator.CreateSignals(GetMixintoJson("signals", null), instance);
         _loaded = true;
     }
 

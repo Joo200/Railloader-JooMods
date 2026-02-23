@@ -119,7 +119,7 @@ public class SerializedCTCCrossover
             return;
         }
 
-        var crossover = parent.AddComponent<CTCCrossover>();
+        var crossover = parent.GetComponent<CTCCrossover>() ?? parent.AddComponent<CTCCrossover>();
         crossover.id = Id;
         crossover.displayName = DisplayName;
         

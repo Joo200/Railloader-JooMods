@@ -48,6 +48,13 @@ public class CTCAutoSignal_CalculateAspect_Patch
             __instance.UpdateSignalOnChange<bool>(storage.ObserveBlockOccupancy, block.id);
             __instance.UpdateSignalOnChange<CTCTrafficFilter>(storage.ObserveBlockTrafficFilter, block.id);
         }
+
+        foreach (var block in crossover.outlets.SelectMany(s => s.Blocks))
+        {
+            __instance.UpdateSignalOnChange<bool>(storage.ObserveBlockOccupancy, block.id);
+            __instance.UpdateSignalOnChange<CTCTrafficFilter>(storage.ObserveBlockTrafficFilter, block.id);
+        }
+
         foreach (var outlet in crossover.outlets.Select(s => s.nextSignal))
         {
             if (outlet != null)

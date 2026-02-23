@@ -48,58 +48,69 @@ public class SerializedCTCModule
 
     public void Initialize(GameObject gameObject, CTCPatchingContext ctx, string jsonPath)
     {
-        ctx.Logger.Information($"Creating module Initialize {Id}");
-        if (Interlocking != null)
+        if (Interlocking != null && ctx.ElementModified(jsonPath + ".interlocking"))
         {
-            ctx.Logger.Information($"Creating interlocking {Interlocking.Id}");
-            if (ctx.Interlockings.ContainsKey(Interlocking.Id))
-            {
-                throw new SCPatchingException($"Interlocking {Interlocking.Id} already exists",
-                    jsonPath + "." + Interlocking.Id + ".id");
-            }
+            ctx.Logger.Debug($"Creating interlocking {Interlocking.Id}");
             Interlocking.CreateFor(gameObject, ctx);
         }
-
-        if (Intermediate != null)
+        else if (gameObject.GetComponent<CTCInterlocking>() != null)
         {
-            ctx.Logger.Information($"Creating intermediate {Intermediate.Id}");
-            if (ctx.Intermediates.ContainsKey(Intermediate.Id))
-            {
-                throw new SCPatchingException($"Intermediate {Intermediate.Id} already exists",
-                    jsonPath + "." + Intermediate.Id + ".id");
-            }
-            Intermediate.CreateFor(gameObject, ctx);
+            ctx.Logger.Debug($"Deleting existing interlocking {gameObject.name}");
+            Object.DestroyImmediate(gameObject.GetComponent<CTCInterlocking>());
         }
 
-        if (Crossover != null)
+        if (Intermediate != null && ctx.ElementModified(jsonPath + ".intermediate"))
         {
-            ctx.Logger.Information($"Creating crossover {Crossover.Id}");
-            if (ctx.Crossovers.ContainsKey(Crossover.Id))
-            {
-                throw new SCPatchingException($"Crossover {Crossover.Id} already exists", jsonPath + "." + Crossover.Id + ".id");
-            }
+            ctx.Logger.Debug($"Creating intermediate {Intermediate.Id}");
+            Intermediate.CreateFor(gameObject, ctx);
+        }
+        else if (gameObject.GetComponent<CTCIntermediate>() != null)
+        {
+            ctx.Logger.Debug($"Deleting existing intermediate {gameObject.name}");
+            Object.DestroyImmediate(gameObject.GetComponent<CTCIntermediate>());
+        }
 
+        if (Crossover != null && ctx.ElementModified(jsonPath + ".crossover"))
+        {
+            ctx.Logger.Debug($"Creating crossover {Crossover.Id}");
             Crossover.CreateFor(gameObject, ctx);
+        }
+        else if (gameObject.GetComponent<CTCCrossover>() != null)
+        {
+            ctx.Logger.Debug($"Deleting existing crossover {gameObject.name}");
+            Object.DestroyImmediate(gameObject.GetComponent<CTCCrossover>());
         }
 
         foreach (var serSignal in AutoSignals)
         {
-            ctx.Logger.Information($"Creating auto signal {serSignal.Key}");
-            if (ctx.AutoSignals.ContainsKey(serSignal.Key))
+            if (!ctx.ElementModified(jsonPath + ".autoSignals." + serSignal.Key))
+                continue;
+            
+            if (ctx.AutoSignals.TryGetValue(serSignal.Key, out var signal))
             {
-                throw new SCPatchingException($"AutoSignal {serSignal.Key} already exists",
-                    jsonPath + ".autoSignals." + serSignal.Key + ".id");
+                ctx.Logger.Debug($"Deleting existing auto signal {serSignal.Key}");
+                Object.DestroyImmediate(signal.gameObject);
+                ctx.AutoSignals.Remove(serSignal.Key);
             }
-            serSignal.Value.Id = serSignal.Key;
-            serSignal.Value.CreateFor(gameObject, ctx);
+
+            if (serSignal.Value != null)
+            {
+                ctx.Logger.Debug($"Creating auto signal {serSignal.Key}");
+                serSignal.Value.Id = serSignal.Key;
+                serSignal.Value.CreateFor(gameObject, ctx);    
+            }
         }
 
         foreach (var serSignal in PredicateSignals)
         {
-            if (ctx.GetSignal(serSignal.Key))
+            if (!ctx.ElementModified(jsonPath + ".predicateSignals." + serSignal.Key))
+                continue;
+            
+            if (ctx.PredicateSignals.TryGetValue(serSignal.Key, out var signal))
             {
-                throw new SCPatchingException($"PredicateSignals {serSignal.Key} already exists",
-                    jsonPath + ".predicateSignals." + serSignal.Key + ".id");
+                ctx.Logger.Debug($"Deleting existing predicate signal {serSignal.Key}");
+                Object.DestroyImmediate(signal.gameObject);
+                ctx.PredicateSignals.Remove(serSignal.Key);
             }
             serSignal.Value.Id = serSignal.Key;
             serSignal.Value.CreateFor(gameObject, ctx);
@@ -107,24 +118,34 @@ public class SerializedCTCModule
         
         foreach (var serBlock in Blocks)
         {
-            ctx.Logger.Information($"Creating block {serBlock.Key}");
-            if (ctx.Blocks.ContainsKey(serBlock.Key))
+            if (!ctx.ElementModified(jsonPath + ".blocks." + serBlock.Key))
+                continue;
+            
+            if (ctx.Blocks.TryGetValue(serBlock.Key, out var block))
             {
-                throw new SCPatchingException($"Block {serBlock.Key} already exists",
-                    jsonPath + ".blocks." + serBlock.Key + ".id");
+                ctx.Logger.Debug($"Deleting existing block {serBlock.Key}");
+                Object.DestroyImmediate(block);
+                ctx.Blocks.Remove(serBlock.Key);
             }
-            var blockGameObject = new GameObject(serBlock.Key.ToUpper());
-            blockGameObject.transform.parent = gameObject.transform;
 
-            serBlock.Value.Id = serBlock.Key;
-            serBlock.Value.CreateFor(blockGameObject, ctx);
+            if (serBlock.Value != null)
+            {
+                ctx.Logger.Debug($"Creating block {serBlock.Key}");
+                var blockGameObject = new GameObject(serBlock.Key.ToUpper());
+                blockGameObject.transform.parent = gameObject.transform;
+
+                serBlock.Value.Id = serBlock.Key;
+                serBlock.Value.CreateFor(blockGameObject, ctx);
+            }
         }
     }
 
-    public void Finalize(CTCPatchingContext ctx)
+    public void Finalize(CTCPatchingContext ctx, string jsonPath)
     {
         foreach (var serSignal in AutoSignals)
         {
+            if (!ctx.ElementModified(jsonPath + ".autoSignals." + serSignal.Key))
+                continue;
             if (ctx.AutoSignals.TryGetValue(serSignal.Key, out var signal))
                 serSignal.Value.ApplyTo(signal, ctx);
             else
@@ -133,13 +154,15 @@ public class SerializedCTCModule
         
         foreach (var serSignal in PredicateSignals)
         {
+            if (!ctx.ElementModified(jsonPath + ".predicateSignals." + serSignal.Key))
+                continue;
             if (ctx.PredicateSignals.TryGetValue(serSignal.Key, out var signal))
                 serSignal.Value.ApplyTo(signal, ctx);
             else
                 ctx.Logger.Warning($"Predicate signal {serSignal.Key} not found in patching context.");
         }
         
-        if (Intermediate != null)
+        if (Intermediate != null && ctx.ElementModified(jsonPath + ".intermediate"))
         {
             if (ctx.Intermediates.TryGetValue(Intermediate.Id, out var intermediate))
                 Intermediate.ApplyTo(intermediate, ctx);
@@ -147,7 +170,7 @@ public class SerializedCTCModule
                 ctx.Logger.Warning($"Intermediate {Intermediate.Id} not found in patching context.");
         }
 
-        if (Interlocking != null)
+        if (Interlocking != null && ctx.ElementModified(jsonPath + ".interlocking"))
         {
             if (ctx.Interlockings.TryGetValue(Interlocking.Id, out var interlocking))
                 Interlocking.ApplyTo(interlocking, ctx);
@@ -163,7 +186,7 @@ public class SerializedCTCModule
             }
         }
         
-        if (Crossover != null)
+        if (Crossover != null && ctx.ElementModified(jsonPath + ".crossover"))
         {
             if (ctx.Crossovers.TryGetValue(Crossover.Id, out var crossover))
                 Crossover.ApplyTo(crossover, ctx);

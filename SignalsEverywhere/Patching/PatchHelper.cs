@@ -27,6 +27,11 @@ public class PatchHelper
     /// </summary>
     public IReadOnlyDictionary<string, string> TouchedByPath => _touchedByPath;
 
+    /// <summary>
+    ///     List of all JSONPaths that were modified by any patch.
+    /// </summary>
+    public IEnumerable<string> TouchedKeys => _touchedByPath.Keys;
+
     public JObject ApplyPatch(string patchSource, JObject patch)
     {
         if (patchSource is null) throw new ArgumentNullException(nameof(patchSource));
@@ -49,15 +54,39 @@ public class PatchHelper
 
     private void Touch(JToken token, string patchSource)
     {
-        _touchedByPath[token.Path] = patchSource;
+        var path = NormalizePath(token.Path);
+        _touchedByPath[path] = patchSource;
+    }
+
+    private static string NormalizePath(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+
+        // 1) Replace ['key'] with .key
+        // 2) Replace [0] with .0 (or just 0 if we want to follow the user's "BR-HW.0" style)
+        // User wants: BR-HW.BR-HW 1.blocks.bryson-ww1.spans
+        // JToken.Path gives: BR-HW['BR-HW 1'].blocks.bryson-ww1.spans
+
+        var result = path
+            .Replace("['", ".")
+            .Replace("']", "")
+            .Replace("[", ".")
+            .Replace("]", "");
+
+        if (result.StartsWith("."))
+            result = result.Substring(1);
+
+        return result;
     }
 
     private void TouchDeep(JToken token, string patchSource)
     {
-        // DescendantsAndSelf() works for any JToken, but we keep intent explicit.
-        // TODO: Fix this
-    //    foreach (var t in token.DescendantsAndSelf())
-    //        Touch(t, patchSource);
+        Touch(token, patchSource);
+        if (token is JContainer container)
+        {
+            foreach (var t in container.Descendants())
+                Touch(t, patchSource);
+        }
     }
 
     // -----------------------------
@@ -85,7 +114,6 @@ public class PatchHelper
 
             if (instructions.Replace is not null)
             {
-                TouchDeep(target, patchSource);
                 touchWholeResult = true;
                 return instructions.Replace;
             }
@@ -125,21 +153,28 @@ public class PatchHelper
     {
         var name = patchProperty.Name;
         var patchValue = patchProperty.Value;
-        var existing = target[name];
+        
+        // Find existing property case-insensitively
+        var existingProp = target.Property(name, StringComparison.OrdinalIgnoreCase);
+        var existing = existingProp?.Value;
+        var targetName = existingProp?.Name ?? name;
 
         switch (patchValue.Type)
         {
             case JTokenType.Object:
-                MergeObjectProperty(patchSource, root, target, name, (JObject)patchValue, existing);
+                MergeObjectProperty(patchSource, root, target, targetName, (JObject)patchValue, existing);
                 return;
 
             case JTokenType.Array:
-                MergeArrayProperty(patchSource, root, target, name, (JArray)patchValue, existing);
+                MergeArrayProperty(patchSource, root, target, targetName, (JArray)patchValue, existing);
                 return;
 
             default:
-                target[name] = patchValue;
-                Touch(target[name]!, patchSource);
+                if (existing is null || !JToken.DeepEquals(existing, patchValue))
+                {
+                    target[targetName] = patchValue;
+                    TouchDeep(target[targetName]!, patchSource);
+                }
                 return;
         }
     }
@@ -152,11 +187,37 @@ public class PatchHelper
         JObject patchObject,
         JToken? existing)
     {
+        var instr = ReadInstructionsOrNull(patchObject);
+
         if (existing is null || existing.Type == JTokenType.Null)
         {
-            target[propertyName] = patchObject;
-            TouchDeep(target[propertyName]!, patchSource);
-            return;
+            if (instr is { IsValid: true })
+            {
+                if (instr.Replace is not null)
+                {
+                    target[propertyName] = instr.Replace;
+                    TouchDeep(target[propertyName]!, patchSource);
+                    return;
+                }
+
+                if (instr.Remove)
+                {
+                    TouchDeep(existing, patchSource);
+                    target.Remove(propertyName);
+                    return;
+                }
+
+                // If it's $add, $append, $find, $index, etc., we can't really apply them to a missing object 
+                // unless we want to support creating it. NormalizeArrayWhenTargetMissing handles arrays.
+                // For now, let's treat it as a generic instruction that might not be supported.
+            }
+
+            if (existing is null || existing.Type == JTokenType.Null)
+            {
+                target[propertyName] = patchObject;
+                TouchDeep(target[propertyName]!, patchSource);
+                return;
+            }
         }
 
         if (existing.Type == JTokenType.Object)
@@ -180,17 +241,16 @@ public class PatchHelper
         }
 
         // existing is primitive/array/etc; patch wants an object => only allow $replace or $remove
-        var instr = ReadInstructionsOrNull(patchObject);
         if (instr?.Replace is not null)
         {
             target[propertyName] = instr.Replace;
-            Touch(target[propertyName]!, patchSource);
+            TouchDeep(target[propertyName]!, patchSource);
             return;
         }
 
         if (instr?.Remove == true)
         {
-            Touch(existing, patchSource);
+            TouchDeep(existing, patchSource);
             target.Remove(propertyName);
             return;
         }
@@ -213,19 +273,25 @@ public class PatchHelper
 
         // Clone existing array so we don't mutate a shared reference unexpectedly.
         var working = existing is null ? null : new JArray((JArray)existing);
-        target[propertyName] = working;
 
         if (working is null)
         {
             // No target array exists: allow limited instructions inside patch array items.
             NormalizeArrayWhenTargetMissing(patchArray);
             target[propertyName] = patchArray;
-            Touch(target[propertyName]!, patchSource);
+            TouchDeep(target[propertyName]!, patchSource);
             return;
         }
 
         foreach (var patchItem in patchArray.Children())
             MergeArrayItem(patchSource, root, working, patchItem);
+        
+        if (!JToken.DeepEquals(existing, working))
+        {
+            target[propertyName] = working;
+            // Note: We don't TouchDeep(working) here because MergeArrayItem/ApplyMatchedArrayElementInstruction
+            // handles touching specific elements.
+        }
     }
 
     private static void NormalizeArrayWhenTargetMissing(JArray patchArray)
@@ -260,6 +326,10 @@ public class PatchHelper
                 // Optional find against a missing target array => effectively no-op.
                 continue;
 
+            if (instr.Index.HasValue && instr.Optional)
+                // Optional index against a missing target array => effectively no-op.
+                continue;
+
             throw new NotSupportedException(
                 $"Unsupported instructions for {patchArray.Path}[{i}] with no existing target array.");
         }
@@ -280,25 +350,37 @@ public class PatchHelper
                 $"Patch {patchItem.Path} does not specify what to do with the array. " +
                 "To replace the entire array, use { \"$replace\": [ ... ] }. " +
                 "To add items, use $add or $append. " +
-                "To edit individual items, each item must have a $find.");
+                "To edit individual items, each item must have a $find or $index.");
 
         // $add / $append apply to the array itself (not to a matched element)
-        if (instr.Find is null)
+        if (instr.Find is null && !instr.Index.HasValue)
         {
             ApplyArrayWideInstruction(patchSource, sourceArray, instr);
             return;
         }
 
-        // $find targets an existing element
-        patchObj.Remove("$find");
+        int matchIndex;
+        if (instr.Index.HasValue)
+        {
+            matchIndex = instr.Index.Value;
+            patchObj.Remove("$index");
+        }
+        else
+        {
+            // $find targets an existing element
+            patchObj.Remove("$find");
+            matchIndex = FindFirstMatchIndex(sourceArray, instr.Find!);
+        }
 
-        var matchIndex = FindFirstMatchIndex(sourceArray, instr.Find);
-        if (matchIndex < 0)
+        if (matchIndex < 0 || matchIndex >= sourceArray.Count)
         {
             if (instr.Optional)
                 return;
 
-            var criteria = string.Join(" && ", instr.Find.Select(f => f.ToString()));
+            if (instr.Index.HasValue)
+                throw new JsonException($"Patch {patchItem.Path} could not be applied: index {matchIndex} out of range (count {sourceArray.Count})");
+
+            var criteria = string.Join(" && ", instr.Find!.Select(f => f.ToString()));
             throw new JsonException($"Patch {patchItem.Path} could not be applied: no matches found for {criteria}");
         }
 
@@ -344,19 +426,27 @@ public class PatchHelper
         switch (cond.Comparison)
         {
             case Comparison.Equals:
+                if (actual.Type == JTokenType.String && cond.Value?.Type == JTokenType.String)
+                {
+                    return string.Equals(actual.Value<string>(), cond.Value.Value<string>(), StringComparison.OrdinalIgnoreCase);
+                }
                 return JToken.DeepEquals(actual, cond.Value);
 
             case Comparison.NotEquals:
+                if (actual.Type == JTokenType.String && cond.Value?.Type == JTokenType.String)
+                {
+                    return !string.Equals(actual.Value<string>(), cond.Value.Value<string>(), StringComparison.OrdinalIgnoreCase);
+                }
                 return !JToken.DeepEquals(actual, cond.Value);
 
             case Comparison.StartsWith:
-                return RequireString(actual, cond.Value, cond).StartsWith(cond.Value!.Value<string>());
+                return RequireString(actual, cond.Value, cond).StartsWith(cond.Value!.Value<string>(), StringComparison.OrdinalIgnoreCase);
 
             case Comparison.EndsWith:
-                return RequireString(actual, cond.Value, cond).EndsWith(cond.Value!.Value<string>());
+                return RequireString(actual, cond.Value, cond).EndsWith(cond.Value!.Value<string>(), StringComparison.OrdinalIgnoreCase);
 
             case Comparison.Contains:
-                return RequireString(actual, cond.Value, cond).Contains(cond.Value!.Value<string>());
+                return RequireString(actual, cond.Value, cond).IndexOf(cond.Value!.Value<string>(), StringComparison.OrdinalIgnoreCase) >= 0;
 
             default:
                 throw new JsonException($"Undefined comparison in $find at {actual.Path}");
@@ -405,10 +495,7 @@ public class PatchHelper
 
             sourceArray.Add(merged);
 
-            if (touchWholeResult)
-                TouchDeep(merged, patchSource);
-            else
-                Touch(merged, patchSource);
+            TouchDeep(merged, patchSource);
 
             return;
         }
@@ -416,13 +503,13 @@ public class PatchHelper
         if (instr.Replace is not null)
         {
             sourceArray[index] = instr.Replace;
-            Touch(sourceArray[index]!, patchSource);
+            TouchDeep(sourceArray[index]!, patchSource);
             return;
         }
 
         if (instr.Remove)
         {
-            Touch(sourceArray[index]!, patchSource);
+            TouchDeep(sourceArray[index]!, patchSource);
             sourceArray.RemoveAt(index);
             return;
         }
@@ -457,7 +544,7 @@ public class PatchHelper
                     $"Error adding elements to {sourceArray.Path}: cannot set $add and $append simultaneously");
 
             sourceArray.Add(instr.Add);
-            Touch(instr.Add, patchSource);
+            TouchDeep(instr.Add, patchSource);
             return;
         }
 
@@ -466,7 +553,7 @@ public class PatchHelper
             foreach (var t in instr.Append)
             {
                 sourceArray.Add(t);
-                Touch(t, patchSource);
+                TouchDeep(t, patchSource);
             }
 
             return;
@@ -503,19 +590,21 @@ public class PatchHelper
                 $"Cannot move '{target.Path}' to '{moveToPath}': only property-moving is supported.");
 
         // Remove from current location
-        Touch(parentProp, patchSource);
         parentProp.Remove();
         removedFromParent = true;
 
-        // Add to destination (merge if same key already exists)
-        if (destination[parentProp.Name] is null)
+        // Add to destination (merge if same key already exists case-insensitively)
+        var existingProp = destination.Property(parentProp.Name, StringComparison.OrdinalIgnoreCase);
+        if (existingProp is null)
         {
             destination.Add(parentProp);
-            Touch(parentProp, patchSource);
+            TouchDeep(parentProp.Value, patchSource);
+            touchWholeResult = true;
             return destination[parentProp.Name]!;
         }
 
-        var wrapperPatch = new JObject(new JProperty(parentProp));
+        // Rename parentProp to match existing property name so MergeObject finds it correctly
+        var wrapperPatch = new JObject(new JProperty(existingProp.Name, parentProp.Value));
         var merged = MergeObject(
             patchSource,
             root,
@@ -523,9 +612,6 @@ public class PatchHelper
             wrapperPatch,
             out var removedFromParent2,
             out var touchWholeResult2);
-
-        if (touchWholeResult2)
-            TouchDeep(merged, patchSource);
 
         // Note: removedFromParent2 refers to removal inside merge under destination; keep original removedFromParent = true.
         touchWholeResult = touchWholeResult2;
@@ -545,6 +631,7 @@ public class PatchHelper
             obj.Property("$remove", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$moveTo", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$find", StringComparison.OrdinalIgnoreCase) is not null ||
+            obj.Property("$index", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$add", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$append", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$clone", StringComparison.OrdinalIgnoreCase) is not null ||
@@ -568,6 +655,8 @@ public sealed class PatchInstructions
 
     [JsonProperty("$find")] public PatchFind[]? Find { get; set; }
 
+    [JsonProperty("$index")] public int? Index { get; set; }
+
     [JsonProperty("$optional")] public bool Optional { get; set; }
 
     [JsonProperty("$clone")] public bool Clone { get; set; }
@@ -582,6 +671,7 @@ public sealed class PatchInstructions
         Remove ||
         !string.IsNullOrWhiteSpace(MoveTo) ||
         Find is { Length: > 0 } ||
+        Index.HasValue ||
         Add is not null ||
         Append is { Length: > 0 } ||
         Clone ||
