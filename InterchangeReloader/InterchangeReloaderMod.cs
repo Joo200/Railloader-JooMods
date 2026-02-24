@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Reflection;
+using System.Linq;
 using Railloader;
 using Serilog;
 
@@ -10,8 +12,6 @@ public class InterchangeReloaderMod : PluginBase
 
     private readonly IModDefinition _modDefinition;
     private readonly IModdingContext _moddingContext;
-
-    public static bool SKOMIntegrationEnabled { get; private set; } = false;
         
     public InterchangeReloaderMod(IModdingContext moddingContext, IModDefinition self)
     {
@@ -25,8 +25,23 @@ public class InterchangeReloaderMod : PluginBase
         if (_moddingContext.Mods.Any(s => s.Id == "Zamu.SomeKindOfMadness"))
         {
             logger.Information("Detected SKOM, registering integration");
-            SKOMIntegration.Register();
-            SKOMIntegrationEnabled = true;
+            RegisterSkom();
+            Ops.InterchangeReloader.SkomActive = true;
+        }
+    }
+
+    private void RegisterSkom()
+    {
+        try
+        {
+            var skomAssembly = Assembly.Load("InterchangeReloaderSkom");
+            var integrationType = skomAssembly.GetType("InterchangeReloader.SKOMIntegration");
+            integrationType.GetMethod("Register", BindingFlags.Public | BindingFlags.Static).Invoke(null, null);
+            logger.Information("Successfully registered SKOM integration");
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, "Failed to register SKOM integration");
         }
     }
 }

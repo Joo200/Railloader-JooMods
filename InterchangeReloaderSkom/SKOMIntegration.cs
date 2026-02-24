@@ -23,7 +23,7 @@ public static class SKOMIntegration
 
         foreach (var reloader in Ops.InterchangeReloader.Reloaders)
         {
-            if (reloader.Disabled || !reloader.isActiveAndEnabled || reloader.Industry.ProgressionDisabled)
+            if (reloader == null || !reloader.isActiveAndEnabled || reloader.Industry.ProgressionDisabled)
                 continue;
 
             if (@event.Car.Waybill.HasValue && @event.Car.Waybill.Value.Destination.Identifier == reloader.Identifier)
@@ -39,7 +39,7 @@ public static class SKOMIntegration
                 continue;
             
             var cars = OpsController.Shared.CountOrdersForIndustry(reloader.Industry);
-            if (cars > reloader.MaxCars * 1.3f)
+            if (cars > reloader.MaxCars * 1.2f)
                 continue;
 
             Logger.Information($"Relocated car to interchange reloader {reloader.DisplayName}");            

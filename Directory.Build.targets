@@ -5,8 +5,14 @@
     
     <!-- Copy the mod to the game directory -->
     <GameModDir Condition="'$(GameModDir)' == ''">$(GameDir)/Mods/$(AssemblyName)</GameModDir>
-    <OutDir Condition="'$(Configuration)' == 'Debug'">$(GameModDir)/</OutDir>
   </PropertyGroup>
+
+  <Target Name="CopyToGame" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Debug'">
+    <ItemGroup>
+      <DebugFiles Include="$(OutputPath)/**/*" Exclude="$(OutputPath)/**/*.pdb;$(OutputPath)/**/*.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DebugFiles)" DestinationFolder="$(GameModDir)" />
+  </Target>
 
   <!-- Replace the default version if something was set for it -->
   <PropertyGroup Condition="'$(AssemblyVersion)' == '' OR '$(MajorVersion)' != '' OR '$(MinorVersion)' != ''">
@@ -27,11 +33,11 @@
   </ItemGroup>
 
   <!-- Publish the mod as a neat zip file -->
-  <Target Name="PrepareForPublishing" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'PublishRelease'">
+  <Target Name="PrepareForPublishing" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'PublishRelease'">    
     <!-- Replace $(AssemblyVersion) with the actual version -->
-    <Exec Command="powershell -Command &quot;(Get-Content '$(OutputPath)Definition.json') -replace '\$\(AssemblyVersion\)', '$(AssemblyVersion)' | Set-Content '$(OutputPath)Definition.json'&quot;" />
+    <Exec Command="powershell -Command &quot;(Get-Content '$(OutputPath)Definition.json') -replace '\$\(AssemblyVersion\)', '$(AssemblyVersion)' | Set-Content '$(OutputPath)Definition.json'&quot;" Condition="Exists('$(OutputPath)Definition.json')" />
 
-    <PropertyGroup>
+    <PropertyGroup Condition="'$(SkipPublishing)' != 'true'">
       <ModsDirectory>$(OutputPath)/Mods</ModsDirectory>
       <ModDirectory>$(ModsDirectory)/$(AssemblyName)</ModDirectory>
 
@@ -56,16 +62,19 @@
 
     <!-- Move all files to the right folder -->
     <ItemGroup>
-      <OutputFiles Include="$(OutputPath)/**/*" />
+      <OutputFiles Include="$(OutputPath)/**/*" Exclude="$(OutputPath)/**/*.pdb;$(OutputPath)/**/*.xml" />
+      <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader'" Remove="$(OutputPath)/*.dll" />
+      <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader' AND Exists('$(OutputPath)InterchangeReloader.dll')" Include="$(OutputPath)InterchangeReloader.dll" />
+      <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader' AND Exists('$(OutputPath)InterchangeReloaderSkom.dll')" Include="$(OutputPath)InterchangeReloaderSkom.dll" />
     </ItemGroup>
 
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(ModDirectory)" />
+    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(ModDirectory)" Condition="'$(SkipPublishing)' != 'true' AND '@(OutputFiles)' != ''" />
 
     <!-- Zip it up -->
-    <Exec Command="powershell -Command &quot;Compress-Archive -Path '$(ModsDirectory)' -Destination '$(ZipName)'&quot;" />
+    <Exec Command="powershell -Command &quot;Compress-Archive -Path '$(ModsDirectory)' -Destination '$(ZipName)'&quot;" Condition="'$(SkipZip)' != 'true' AND '$(SkipPublishing)' != 'true'" />
     
     <!-- Move them to the game directory -->
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(GameModDir)" />
+    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(GameModDir)" Condition="'$(SkipPublishing)' != 'true'" />
   </Target>
   <Target Name="PublishReleaseTarget" AfterTargets="PrepareForPublishing" Condition="'$(Configuration)' == 'PublishRelease'">
     <PropertyGroup>

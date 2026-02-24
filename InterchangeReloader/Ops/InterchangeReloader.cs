@@ -27,6 +27,8 @@ public class InterchangeReloader : IndustryComponent, ICustomIndustryComponent
 
     public List<Load> ExampleLoads { get; private set; } = new();
 
+    public static bool SkomActive = false;
+
     public bool AcceptsCarsWithLoad(IOpsCar car)
     {
         return !Disabled && isActiveAndEnabled && !Industry.ProgressionDisabled && carTypeFilter.Matches(car.CarType);
@@ -193,7 +195,7 @@ public class InterchangeReloader : IndustryComponent, ICustomIndustryComponent
     public override void OrderCars(IIndustryContext ctx)
     {
         int cars = ctx.NumberOfCarsOnOrderForTag(null);
-        int maxExpected = Mathf.RoundToInt(MaxCars * (InterchangeReloaderMod.SKOMIntegrationEnabled ? 0.5f : 1.0f));
+        int maxExpected = Mathf.RoundToInt(MaxCars * (SkomActive ? 0.5f : 1.0f));
         int order = maxExpected - cars;
         logger.Information($"Ordered {order} cars for {DisplayName}.");
         if (order < 0) return;

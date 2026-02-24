@@ -1,9 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
+    <MinorVersion>1</MinorVersion>
     <Configurations>Debug;Release;PublishRelease</Configurations>
     <Platforms>AnyCPU</Platforms>
+    <PackageId>InterchangeReloader</PackageId>
+    <AssemblyName>InterchangeReloader</AssemblyName>
+    <RootNamespace>InterchangeReloader</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <GameAssembly Include="Newtonsoft.Json" />
@@ -17,10 +20,6 @@
   <ItemGroup>
     <Reference Include="StrangeCustoms">
       <HintPath>$(GameDir)\Mods\StrangeCustoms\Experimental\StrangeCustoms.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="SomeKindOfMadness">
-      <HintPath>$(GameDir)\Mods\SomeKindOfMadness\Experimental\SomeKindOfMadness.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
