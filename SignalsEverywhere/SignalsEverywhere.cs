@@ -50,8 +50,6 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         
         moddingContext.RegisterConsoleCommand(new DebugCommand(_signalCreator));
         
-        Messenger.Default.Register<GraphDidChangeEvent>(this, RegisterSignals);
-
         Messenger.Default.Register<CTCFeatureChange>(this, _ => RebuildCtcPanel());
         Messenger.Default.Register<ProgressionStateDidChange>(this, _ => CTCPanel.Shared?.TryRebuild());
     }
@@ -79,25 +77,13 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
     }
     
     private bool _loaded = false;
-    public void RegisterSignals(GraphDidChangeEvent @event)
-    {
-        CTCPanelController instance = Object.FindAnyObjectByType<CTCPanelController>(FindObjectsInactive.Include);
-        if (instance == null)
-        {
-            logger.Warning("Couldn't find CTC Panel");
-            return;
-        }
-        logger.Information("Patching signals");
-        _signalCreator.CreateSignals(GetMixintoJson("signals", null), instance);
-        _loaded = true;
-    }
 
     public void BuildSignals(CTCPanelController instance)
     {
         if (!_loaded)
         {
-            logger.Warning("Signals not loaded yet");
-            return;
+            _signalCreator.CreateSignals(GetMixintoJson("signals", null), instance);
+            _loaded = true;
         }
         
         try

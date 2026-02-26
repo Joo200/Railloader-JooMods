@@ -38,7 +38,7 @@ public class SerializedCTCAutoSignal : SerializedCTCSignal
         }
         
         CTCAutoSignal? signal = Object.Instantiate(HeadConfiguration == SignalHeadConfiguration.Double ? _doublePrefab : _singlePrefab , parent.transform, false);
-        if (!signal)
+        if (signal == null)
         {
             throw new SCPatchingException("Unable to instantiate new signal");
         }
