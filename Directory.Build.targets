@@ -121,4 +121,9 @@
     <RemoveDir Directories="..\bin" ContinueOnError="true" />
     <MakeDir Directories="..\bin" />
   </Target>
+
+  <Target Name="CleanOutputBeforeBuild" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'PublishRelease'">
+    <Message Text="Cleaning output directory for $(AssemblyName)..." Importance="high" />
+    <RemoveDir Directories="$(OutputPath)" ContinueOnError="true" />
+  </Target>
 </Project>
