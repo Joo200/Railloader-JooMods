@@ -4,9 +4,12 @@ This mod adds bicolor callouts to the game, allowing players to customize the co
 
 ## Usage
 
-To use bicolored callouts, instead of specifying 3 color values (RGB) apply 6 to a region.
+To use bicolored callouts, instead of specifying 3 color values (RGB) apply 6 or 9 to a region.
 
-The values are interpreted as RGBRGB, where the left/major color is the first value.
+The values are interpreted as RGBRGB, where the major color is the first interpreted value.
+
+If you provide 9 float values (as 3 colors) (e.g. `[0.15, 0.23, 0.41, 0.15, 0.23, 0.41, 0.15, 0.23, 0.41 ]`) the first color is used when the mod is not installed.
+ColorPatcher will then use the second and third color to color the callout. This allows you to use a different base color for the callout when the mod is not installed.
 
 ```json
 {

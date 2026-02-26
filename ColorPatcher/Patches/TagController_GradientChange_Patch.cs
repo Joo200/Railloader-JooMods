@@ -36,9 +36,10 @@ public class AreaColor_GradientChange_Patch
             return;
 
         // Attach or replace color data
+        int offset = value.Length == 9 ? 3 : 0;
         var setup = new TagCalloutColor();
-        setup.First = new Color(value[0], value[1], value[2]);
-        setup.Second = new Color(value[3], value[4], value[5]);
+        setup.First = new Color(value[offset + 0], value[offset + 1], value[offset + 2]);
+        setup.Second = new Color(value[offset + 3], value[offset + 4], value[offset + 5]);
         ColorSetup[__instance.Name.ToLower()] = setup;
     }
 

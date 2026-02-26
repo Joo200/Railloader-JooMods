@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Linq;
+using Game;
 using HarmonyLib;
+using Network.Messages;
 using UI;
 using Serilog;
 using SignalsEverywhere.Panel;
+using UI.Common;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -58,8 +61,17 @@ public static class GameInput_Awake_Patch
     {
         if (GameInput.MovementInputEnabled)
         {
-            Log.ForContext<SignalsEverywhere>().Information("CTC Panel toggled");
-            CTCPanel.Shared?.Toggle();
+            if (CTCPanel.Shared != null)
+            {
+                Log.ForContext<SignalsEverywhere>().Information("CTC Panel toggled");
+                CTCPanel.Shared.Toggle();    
+            }
+            else
+            {
+                Alert alert = new Alert(AlertStyle.Toast, AlertLevel.Error, "Requires activated CTC Feature", TimeWeather.Now.TotalSeconds);
+                WindowManager.Shared.Present(alert);
+            }
+            
         }
     }
 }
