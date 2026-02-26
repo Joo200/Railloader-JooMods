@@ -38,32 +38,32 @@
     <Exec Command="powershell -Command &quot;(Get-Content '$(OutputPath)Definition.json') -replace '\$\(AssemblyVersion\)', '$(AssemblyVersion)' | Set-Content '$(OutputPath)Definition.json'&quot;" Condition="Exists('$(OutputPath)Definition.json')" />
 
     <PropertyGroup Condition="'$(SkipPublishing)' != 'true'">
-      <ModsDirectory>$(OutputPath)/Mods</ModsDirectory>
+      <ModsDirectory>$(OutputPath)Mods</ModsDirectory>
       <ModDirectory>$(ModsDirectory)/$(AssemblyName)</ModDirectory>
 
       <!-- Folder we'll put the published zips into -->
-      <PublishPath>../bin</PublishPath>
-      <ZipName>$(PublishPath)/$(AssemblyName)_$(AssemblyVersion).zip</ZipName>
+      <PublishPath>..\bin</PublishPath>
+      <ZipName>$(PublishPath)\$(AssemblyName)_$(AssemblyVersion).zip</ZipName>
     </PropertyGroup>
 
     <!-- Assure the output path exists -->
-    <MakeDir Directories="$(PublishPath)" />
+    <MakeDir Directories="$(PublishPath)" Condition="'$(SkipPublishing)' != 'true'" />
     
     <!-- Remove the old Mods directory, and Zips file if any is lying around -->
     <ItemGroup>
-      <OldZips Include="$(PublishPath)/$(AssemblyName)_*.zip" />
+      <OldZips Include="$(PublishPath)\$(AssemblyName)_*.zip" />
     </ItemGroup>
     
-    <RemoveDir Directories="$(ModsDirectory)"  ContinueOnError="true" />
-    <Delete Files="@(OldZips)" />
+    <RemoveDir Directories="$(ModsDirectory)"  ContinueOnError="true" Condition="'$(SkipPublishing)' != 'true'" />
+    <Delete Files="@(OldZips)" Condition="'$(SkipPublishing)' != 'true'" />
     
     <!-- Create the Mods directory again -->
-    <MakeDir Directories="$(ModDirectory)" />
+    <MakeDir Directories="$(ModDirectory)" Condition="'$(SkipPublishing)' != 'true'" />
 
     <!-- Move all files to the right folder -->
     <ItemGroup>
-      <OutputFiles Include="$(OutputPath)/**/*" Exclude="$(OutputPath)/**/*.pdb;$(OutputPath)/**/*.xml" />
-      <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader'" Remove="$(OutputPath)/*.dll" />
+      <OutputFiles Include="$(OutputPath)**/*" Exclude="$(OutputPath)**/*.pdb;$(OutputPath)**/*.xml" />
+      <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader'" Remove="$(OutputPath)*.dll" />
       <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader' AND Exists('$(OutputPath)InterchangeReloader.dll')" Include="$(OutputPath)InterchangeReloader.dll" />
       <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader' AND Exists('$(OutputPath)InterchangeReloaderSkom.dll')" Include="$(OutputPath)InterchangeReloaderSkom.dll" />
     </ItemGroup>
@@ -76,15 +76,15 @@
     <!-- Move them to the game directory -->
     <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(GameModDir)" Condition="'$(SkipPublishing)' != 'true'" />
   </Target>
-  <Target Name="PublishReleaseTarget" AfterTargets="PrepareForPublishing" Condition="'$(Configuration)' == 'PublishRelease'">
+  <Target Name="PublishReleaseTarget" AfterTargets="PrepareForPublishing" Condition="'$(Configuration)' == 'PublishRelease' AND '$(AssemblyName)' == 'ColorPatcher'">
     <PropertyGroup>
-      <RepoUrl>git@github.com:Joo200/Railloader.TimeSync.git</RepoUrl>
+      <RepoUrl>git@github.com:Joo200/Railloader-JooMods.git</RepoUrl>
       <!-- Create a tag based on the year, day of year, hh and mm in utc -->
       <PublishTag>$([System.DateTime]::UtcNow.ToString(yy))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("Hmm").TrimStart('0'))</PublishTag>
     </PropertyGroup>
 
     <ItemGroup>
-      <ZipFiles Include="../bin/*.zip" />
+      <ZipFiles Include="..\bin\*.zip" />
     </ItemGroup>
 
     <!-- 1. Remove every content in the bin directory -->
@@ -110,19 +110,15 @@
     </Exec>
 
     <Message Text="Creating GitHub release $(PublishTag) and uploading zips..." Importance="high" Condition="'$(ReleaseExistsExitCode)' != '0'" />
-    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' $zips } else { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' }&quot;" Condition="'$(ReleaseExistsExitCode)' != '0'" />
+    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ..\bin\*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' $zips } else { gh release create $(PublishTag) --title 'Release $(PublishTag)' --notes 'Manual release' }&quot;" Condition="'$(ReleaseExistsExitCode)' != '0'" />
 
     <Message Text="Uploading zips to existing GitHub release $(PublishTag)..." Importance="high" Condition="'$(ReleaseExistsExitCode)' == '0'" />
-    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ../bin/*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release upload $(PublishTag) $zips --clobber }&quot;" Condition="'$(ReleaseExistsExitCode)' == '0'" />
+    <Exec Command="powershell -Command &quot;$zips = Get-ChildItem ..\bin\*.zip | Select-Object -ExpandProperty FullName; if ($zips) { gh release upload $(PublishTag) $zips --clobber }&quot;" Condition="'$(ReleaseExistsExitCode)' == '0'" />
   </Target>
 
-  <Target Name="CleanBinBeforePublish" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'PublishRelease'">
+  <Target Name="CleanBinBeforePublish" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'PublishRelease' AND '$(AssemblyName)' == 'TimeSyncMod'">
     <Message Text="Cleaning bin directory before PublishRelease..." Importance="high" />
-    <ItemGroup>
-      <MyOldZips Include="$(PublishPath)/$(AssemblyName)_*.zip" />
-    </ItemGroup>
-    <Delete Files="@(MyOldZips)" />
-    <!-- Also remove directories in bin that belong to this project -->
-    <RemoveDir Directories="$(ModsDirectory)"  ContinueOnError="true" />
+    <RemoveDir Directories="..\bin" ContinueOnError="true" />
+    <MakeDir Directories="..\bin" />
   </Target>
 </Project>

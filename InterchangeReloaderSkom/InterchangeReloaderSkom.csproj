@@ -35,9 +35,19 @@
     </ProjectReference>
   </ItemGroup>
   
-  <Target Name="CopySkomToMain" AfterTargets="AfterBuild">
+  <Target Name="CopySkomToMain" AfterTargets="PrepareForPublishing">
     <Copy SourceFiles="$(OutputPath)InterchangeReloaderSkom.dll" DestinationFolder="..\InterchangeReloader\$(OutputPath)" />
     <Copy SourceFiles="$(OutputPath)InterchangeReloaderSkom.dll" DestinationFolder="$(GameDir)\Mods\InterchangeReloader\" Condition="'$(Configuration)' == 'Debug'" />
+    
+    <!-- Redo the zip for InterchangeReloader to include the Skom dll -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'PublishRelease'">
+      <ReloaderOutputPath>..\InterchangeReloader\$(OutputPath)</ReloaderOutputPath>
+      <ReloaderModsDir>$(ReloaderOutputPath)Mods</ReloaderModsDir>
+      <ReloaderModDir>$(ReloaderModsDir)\InterchangeReloader</ReloaderModDir>
+      <ReloaderZipName>..\bin\InterchangeReloader_$(AssemblyVersion).zip</ReloaderZipName>
+    </PropertyGroup>
+    <Copy SourceFiles="$(OutputPath)InterchangeReloaderSkom.dll" DestinationFolder="$(ReloaderModDir)" Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'PublishRelease'" />
+    <Exec Command="powershell -Command &quot;Compress-Archive -Path '$(ReloaderModsDir)' -Destination '$(ReloaderZipName)' -Force&quot;" Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'PublishRelease'" />
   </Target>
   <ItemGroup>
     <Content Remove="Definition.json" />
