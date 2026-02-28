@@ -23,18 +23,15 @@ public class CTCPanel : WindowBase
     public override Window.Sizing Sizing => Window.Sizing.Resizable(DefaultSize);
 
     public static string Button(string buttonId) => $"sebutton:{buttonId}:active";
-
-    private CTCPanelLayout _layout = SignalsEverywhere.Shared.PanelLayout;
-    private Dictionary<string, Schematic> _schematics = new();
-    
-    private SignalStorage? _storage;
-    private KeyValueObject? _kvo;
-    
-    private HashSet<IDisposable> _observers = new();
-    
     public static CTCPanel? Shared { get; private set; }
+
+    private Dictionary<string, Schematic> _schematics = new();
+    private static SignalStorage? _storage => CTCPanelController.Shared?.GetComponentInParent<SignalStorage>();
     
-    public List<string> Branches => SignalsEverywhere.Shared.PanelLayout.panel.Keys.ToList();
+    private static CTCPanelLayout _layout => SignalsEverywhere.Shared.PanelLayout;
+    public List<string> Branches => _layout.panel.Keys.ToList();
+    
+    private IDisposable? _observer;
 
     public float Scale
     {
@@ -55,6 +52,7 @@ public class CTCPanel : WindowBase
         }
         WindowHelper.CreateWindow<CTCPanel>();
         Shared = WindowManager.Shared.GetWindow<CTCPanel>();
+        Shared._observer = _storage?.ObserveSystemMode(v => Shared?.TryRebuild());
     }
 
     public void TryRebuild()
@@ -62,26 +60,9 @@ public class CTCPanel : WindowBase
         if (Window.IsShown) Rebuild();
     }
 
-    private void OnEnable()
-    {
-        CTCPanelController controller = CTCPanelController.Shared;
-        _storage = controller.GetComponentInParent<SignalStorage>();
-        _observers.Add(_storage.ObserveSystemMode(_ =>
-        {
-            TryRebuild();
-        }));
-        
-        _kvo = _storage.GetComponent<KeyValueObject>();
-    }
-
     private void OnDisable()
     {
-        foreach (var ob in _observers)
-        {
-            ob.Dispose();
-        }
-        _observers.Clear();
-
+        _observer?.Dispose();
         foreach (var schematic in _schematics.Values)
         {
             if (schematic != null)

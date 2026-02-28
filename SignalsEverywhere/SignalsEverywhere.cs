@@ -50,7 +50,7 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         
         moddingContext.RegisterConsoleCommand(new DebugCommand(_signalCreator));
         
-        Messenger.Default.Register<CTCFeatureChange>(this, _ => RebuildCtcPanel());
+        Messenger.Default.Register<CTCFeatureChange>(this, _ => CTCPanel.Shared?.TryRebuild());
         Messenger.Default.Register<ProgressionStateDidChange>(this, _ => CTCPanel.Shared?.TryRebuild());
     }
 
@@ -93,6 +93,15 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         catch (Exception ex)
         {
             logger.Error(ex, $"Error building signals: {ex.Message}");
+        }
+
+        try
+        {
+            RebuildCtcPanel();
+        }
+        catch (Exception ex)
+        {
+            logger.Error(ex, $"Error rebuilding CTC panel: {ex.Message}");
         }
         
         logger.Information("Adding CTC KeyValueObserver to observe custom buttons");
