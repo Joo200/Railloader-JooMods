@@ -121,21 +121,29 @@ public class SerializedCTCModule
             if (!ctx.ElementModified(jsonPath + ".blocks." + serBlock.Key))
                 continue;
             
-            if (ctx.Blocks.TryGetValue(serBlock.Key, out var block))
+            if (serBlock.Value != null)
+            {
+                if (ctx.Blocks.TryGetValue(serBlock.Key, out var block))
+                {
+                    ctx.Logger.Debug($"Deleting existing block {serBlock.Key}");
+                    serBlock.Value.Id = serBlock.Key;
+                    serBlock.Value.ApplySpans(block, ctx);
+                }
+                else
+                {
+                    ctx.Logger.Debug($"Creating block {serBlock.Key}");
+                    var blockGameObject = new GameObject(serBlock.Key.ToUpper());
+                    blockGameObject.transform.parent = gameObject.transform;
+
+                    serBlock.Value.Id = serBlock.Key;
+                    serBlock.Value.CreateFor(blockGameObject, ctx);
+                }
+            } 
+            else if (ctx.Blocks.TryGetValue(serBlock.Key, out var block))
             {
                 ctx.Logger.Debug($"Deleting existing block {serBlock.Key}");
                 Object.DestroyImmediate(block);
                 ctx.Blocks.Remove(serBlock.Key);
-            }
-
-            if (serBlock.Value != null)
-            {
-                ctx.Logger.Debug($"Creating block {serBlock.Key}");
-                var blockGameObject = new GameObject(serBlock.Key.ToUpper());
-                blockGameObject.transform.parent = gameObject.transform;
-
-                serBlock.Value.Id = serBlock.Key;
-                serBlock.Value.CreateFor(blockGameObject, ctx);
             }
         }
     }

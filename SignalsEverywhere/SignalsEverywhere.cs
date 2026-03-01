@@ -7,6 +7,7 @@ using Serilog;
 using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
 using HarmonyLib;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SignalsEverywhere.Panel;
 using SignalsEverywhere.Patching;
@@ -50,6 +51,7 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         
         moddingContext.RegisterConsoleCommand(new DebugCommand(_signalCreator));
         
+        Messenger.Default.Register<GraphDidChangeEvent>(this, _ => RegisterSignals());
         Messenger.Default.Register<CTCFeatureChange>(this, _ => CTCPanel.Shared?.TryRebuild());
         Messenger.Default.Register<ProgressionStateDidChange>(this, _ => CTCPanel.Shared?.TryRebuild());
     }
@@ -57,15 +59,22 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
     private CTCPanelLayout? LoadPanelLayout()
     {
         PatchHelper patchHelper = GetMixintoJson("ctcPanel", null);
-        var result = patchHelper.Value.ToObject<CTCPanelLayout>();
-        if (result == null)
+        try
         {
-            logger.Error("CTCPanelLayout is not valid");
+            var result = patchHelper.Value.ToObject<CTCPanelLayout>();
+            result.Squash();
+            PanelLayout = result;
+            return result;
+        }
+        catch (Newtonsoft.Json.JsonSerializationException e)
+        {
+            logger.Error(e, "Error loading CTC Panel layout, dump json file");
+            var path = Path.Combine(ModDirectory, "ctcpanel-failed.json");
+            using (StreamWriter streamWriter = new StreamWriter(path))
+                using (var jsonWriter = new JsonTextWriter(streamWriter) { Formatting = Formatting.Indented })
+                    _signalCreator.Serializer.Serialize(jsonWriter, patchHelper.Value);
             return null;
         }
-        result.Squash();
-        PanelLayout = result;
-        return result;
     }
 
     private void RebuildCtcPanel()
@@ -77,6 +86,18 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
     }
     
     private bool _loaded = false;
+    public void RegisterSignals()
+    {
+        CTCPanelController instance = Object.FindAnyObjectByType<CTCPanelController>(FindObjectsInactive.Include);
+        if (instance == null)
+        {
+            logger.Warning("Couldn't find CTC Panel");
+            return;
+        }
+        logger.Information("Patching signals");
+        _signalCreator.CreateSignals(GetMixintoJson("signals", null), instance);
+        _loaded = true;
+    }
 
     public void BuildSignals(CTCPanelController instance)
     {

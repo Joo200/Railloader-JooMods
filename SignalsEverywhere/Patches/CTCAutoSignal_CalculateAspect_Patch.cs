@@ -14,7 +14,6 @@ namespace SignalsEverywhere.Patches;
 [HarmonyPatchCategory("SignalsEverywhere")]
 public class CTCAutoSignal_CalculateAspect_Patch
 {
-    
     [HarmonyPostfix]
     [HarmonyPatch("OnEnable")]
     private static void OnEnable(CTCAutoSignal __instance)
@@ -31,7 +30,7 @@ public class CTCAutoSignal_CalculateAspect_Patch
             Log.Error($"Signal {__instance.id} has no SignalStorage");
             return;
         }
-        
+
         Log.Information($"Registering signal {__instance.id} for crossover {crossover.id}");
         foreach (var switchSet in crossover.switchSets)
         {
@@ -43,6 +42,7 @@ public class CTCAutoSignal_CalculateAspect_Patch
         {
             __instance.UpdateSignalOnChange<CTCTrafficFilter>(storage.ObserveCrossoverGroupDirection, group.groupId);
         }
+
         foreach (var block in crossover.routes.SelectMany(s => s.usedBlocks))
         {
             __instance.UpdateSignalOnChange<bool>(storage.ObserveBlockOccupancy, block.id);
@@ -66,7 +66,7 @@ public class CTCAutoSignal_CalculateAspect_Patch
     {
         return signal.GetComponentInParent<SignalStorage>().GetSignalAspect(signal.id);
     }
-    
+
     private static SemaphoreHeadController.Aspect AspectForBlockAndNextSignal(
         IReadOnlyCollection<CTCBlock> nextBlocks,
         CTCSignal nextSignal,
@@ -95,35 +95,65 @@ public class CTCAutoSignal_CalculateAspect_Patch
         }
     }
 
-    private static void CalculateCrossoverAspect(CTCAutoSignal __instance, ref SignalAspect __result, CTCCrossover crossover)
+    private static void CalculateCrossoverAspect(CTCAutoSignal __instance, ref SignalAspect __result,
+        CTCCrossover crossover)
     {
         SemaphoreHeadController.Aspect head0 = SemaphoreHeadController.Aspect.Red;
         SemaphoreHeadController.Aspect head1 = SemaphoreHeadController.Aspect.Red;
+        SemaphoreHeadController.Aspect head2 = SemaphoreHeadController.Aspect.Red;
         if (__instance.interlockingRouteMapping.Count == 0)
         {
             Log.Error($"Signal {__instance.id} has empty interlockingRouteMapping -- no aspects will be displayed");
-        } 
+        }
+
         if (__instance.interlockingRouteMapping.Count >= 1)
         {
-            var (blocks, signal, lined) = crossover.BlockAndNextSignal(__instance.id, __instance.interlockingRouteMapping[0], __instance.direction);
+            var (blocks, signal, lined) = crossover.BlockAndNextSignal(__instance.id,
+                __instance.interlockingRouteMapping[0], __instance.direction);
             head0 = AspectForBlockAndNextSignal(blocks, signal, lined);
         }
+
         if (__instance.interlockingRouteMapping.Count >= 2)
         {
-            for (int i = 1; i < __instance.interlockingRouteMapping.Count; i++)
+            if (__instance.headConfiguration == SignalHeadConfiguration.Double)
             {
-                var (blocks, signal, lined) = crossover.BlockAndNextSignal(__instance.id, __instance.interlockingRouteMapping[i], __instance.direction);
+                for (int i = 1; i < __instance.interlockingRouteMapping.Count; i++)
+                {
+                    var (blocks, signal, lined) = crossover.BlockAndNextSignal(__instance.id,
+                        __instance.interlockingRouteMapping[i], __instance.direction);
+                    head1 = AspectForBlockAndNextSignal(blocks, signal, lined);
+                    if (head1 != SemaphoreHeadController.Aspect.Red)
+                        break;
+                }
+            }
+            else if (__instance.headConfiguration == SignalHeadConfiguration.Triple)
+            {
+                var (blocks, signal, lined) = crossover.BlockAndNextSignal(__instance.id,
+                    __instance.interlockingRouteMapping[1], __instance.direction);
                 head1 = AspectForBlockAndNextSignal(blocks, signal, lined);
-                if (head1 != SemaphoreHeadController.Aspect.Red) 
+            }
+        }
+
+        if (__instance.interlockingRouteMapping.Count >= 3 &&
+            __instance.headConfiguration == SignalHeadConfiguration.Triple)
+        {
+            for (int i = 2; i < __instance.interlockingRouteMapping.Count; i++)
+            {
+                var (blocks, signal, lined) = crossover.BlockAndNextSignal(__instance.id,
+                    __instance.interlockingRouteMapping[i], __instance.direction);
+                head2 = AspectForBlockAndNextSignal(blocks, signal, lined);
+                if (head2 != SemaphoreHeadController.Aspect.Red)
                     break;
             }
         }
-        __result = SignalAspectForHeads(head0, head1);
+
+        __result = SignalAspectForHeads(head0, head1, head2);
     }
-    
+
     private static SignalAspect SignalAspectForHeads(
         SemaphoreHeadController.Aspect head0,
-        SemaphoreHeadController.Aspect head1)
+        SemaphoreHeadController.Aspect head1,
+        SemaphoreHeadController.Aspect head2)
     {
         if (head0 == SemaphoreHeadController.Aspect.Yellow)
             return SignalAspect.Approach;
@@ -133,13 +163,15 @@ public class CTCAutoSignal_CalculateAspect_Patch
             return SignalAspect.DivergingApproach;
         if (head1 == SemaphoreHeadController.Aspect.Green)
             return SignalAspect.DivergingClear;
+        if (head2 == SemaphoreHeadController.Aspect.Yellow || head2 == SemaphoreHeadController.Aspect.Green)
+            return SignalAspect.Restricting;
         return SignalAspect.Stop;
     }
-    
+
     [HarmonyPostfix]
     [HarmonyPatch("_CalculateAspect")]
     private static void CalculateAspect(
-        CTCAutoSignal __instance, 
+        CTCAutoSignal __instance,
         ref SignalAspect __result,
         [HarmonyArgument("stopReason")] ref int stopReason)
     {
@@ -149,7 +181,7 @@ public class CTCAutoSignal_CalculateAspect_Patch
             CalculateCrossoverAspect(__instance, ref __result, crossover);
             return;
         }
-        
+
         if (__result != SignalAspect.Stop)
         {
             return;
@@ -159,11 +191,14 @@ public class CTCAutoSignal_CalculateAspect_Patch
         {
             return;
         }
+
         if (__instance.Interlocking != null && __instance.interlockingRouteMapping.Count > 2)
         {
             for (int i = 2; i < __instance.interlockingRouteMapping.Count; i++)
             {
-                var (blocks, signal, lined) = __instance.Interlocking.BlockAndNexSignal(__instance.interlockingRouteMapping[i], __instance.direction);
+                var (blocks, signal, lined) =
+                    __instance.Interlocking.BlockAndNexSignal(__instance.interlockingRouteMapping[i],
+                        __instance.direction);
                 if (!lined)
                 {
                     continue;
@@ -175,7 +210,7 @@ public class CTCAutoSignal_CalculateAspect_Patch
                 }
 
                 Log.Debug($"Route overwrites with Diverging Approach for signal {__instance.id}");
-                __result = SignalAspect.DivergingApproach;
+                __result = __instance.headConfiguration == SignalHeadConfiguration.Triple ? SignalAspect.Restricting : SignalAspect.DivergingApproach;
                 return;
             }
         }

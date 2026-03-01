@@ -202,7 +202,8 @@ public class PatchHelper
 
                 if (instr.Remove)
                 {
-                    TouchDeep(existing, patchSource);
+                    if (existing is not null)
+                        TouchDeep(existing, patchSource);
                     target.Remove(propertyName);
                     return;
                 }
@@ -359,6 +360,42 @@ public class PatchHelper
             return;
         }
 
+        if (instr.SelectAll)
+        {
+            if (instr.Index.HasValue)
+                throw new JsonException($"Patch {patchItem.Path} cannot use $selectAll with $index.");
+            
+            if (instr.Find is null)
+                throw new JsonException($"Patch {patchItem.Path} must use $find with $selectAll.");
+
+            patchObj.Remove("$selectAll");
+            patchObj.Remove("$find");
+
+            var indices = FindAllMatchIndices(sourceArray, instr.Find);
+            if (indices.Count == 0)
+            {
+                if (instr.Optional)
+                    return;
+
+                var criteria = string.Join(" && ", instr.Find.Select(f => f.ToString()));
+                throw new JsonException($"Patch {patchItem.Path} could not be applied: no matches found for {criteria}");
+            }
+
+            // Apply in reverse to handle removals correctly.
+            for (var i = indices.Count - 1; i >= 0; i--)
+            {
+                ApplyMatchedArrayElementInstruction(
+                    patchSource,
+                    root,
+                    sourceArray,
+                    indices[i],
+                    patchObj,
+                    instr);
+            }
+
+            return;
+        }
+
         int matchIndex;
         if (instr.Index.HasValue)
         {
@@ -391,6 +428,15 @@ public class PatchHelper
             matchIndex,
             patchObj,
             instr);
+    }
+
+    private static List<int> FindAllMatchIndices(JArray sourceArray, IReadOnlyList<PatchFind> conditions)
+    {
+        var indices = new List<int>();
+        for (var i = 0; i < sourceArray.Count; i++)
+            if (MatchesAll(sourceArray[i], conditions))
+                indices.Add(i);
+        return indices;
     }
 
     private static int FindFirstMatchIndex(JArray sourceArray, IReadOnlyList<PatchFind> conditions)
@@ -635,6 +681,7 @@ public class PatchHelper
             obj.Property("$add", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$append", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$clone", StringComparison.OrdinalIgnoreCase) is not null ||
+            obj.Property("$selectAll", StringComparison.OrdinalIgnoreCase) is not null ||
             obj.Property("$optional", StringComparison.OrdinalIgnoreCase) is not null;
 
         if (!hasAnyInstruction)
@@ -657,6 +704,8 @@ public sealed class PatchInstructions
 
     [JsonProperty("$index")] public int? Index { get; set; }
 
+    [JsonProperty("$selectAll")] public bool SelectAll { get; set; }
+
     [JsonProperty("$optional")] public bool Optional { get; set; }
 
     [JsonProperty("$clone")] public bool Clone { get; set; }
@@ -672,6 +721,7 @@ public sealed class PatchInstructions
         !string.IsNullOrWhiteSpace(MoveTo) ||
         Find is { Length: > 0 } ||
         Index.HasValue ||
+        SelectAll ||
         Add is not null ||
         Append is { Length: > 0 } ||
         Clone ||

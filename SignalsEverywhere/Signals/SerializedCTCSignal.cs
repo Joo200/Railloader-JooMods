@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 using HarmonyLib;
 using Helpers;
 using StrangeCustoms.Tracks;
 using Track;
 using Track.Signals;
 using UnityEngine;
-using UnityEngine.InputSystem.OnScreen;
 
 namespace SignalsEverywhere.Signals;
 
@@ -14,7 +12,10 @@ public abstract class SerializedCTCSignal
 {
     private static readonly AccessTools.FieldRef<TrackMarker, SerializableLocation> _location = AccessTools.FieldRefAccess<TrackMarker, SerializableLocation>(nameof (_location));
     
+    private static readonly AccessTools.FieldRef<CTCSignalModelController, bool[]> _activeByDefault = AccessTools.FieldRefAccess<CTCSignalModelController, bool[]>(nameof(_activeByDefault));
+    
     public string Id { get; set; }
+    public string ModelType { get; set; } = SignalPrefabStore.DefaultType;
     public SignalHeadConfiguration HeadConfiguration { get; set; }
     public CTCDirection Direction { get; set; }
     public SerializedLocation Location { get; set; }
@@ -45,8 +46,9 @@ public abstract class SerializedCTCSignal
         var marker = signal.GetComponent<TrackMarker>();
         marker.id = "signal_" + Id;
         _location(marker) = Location;
-        
-        var loc = Graph.Shared.MakeLocation(Location);
+
+        SerializableLocation l = Location;
+        var loc = new Location(ctx.SegmentsById[l.segmentId], l.distance, l.end);
         if (loc.segment != null)
         {
             var posRot = Graph.Shared.GetPositionRotation(loc);
@@ -56,6 +58,10 @@ public abstract class SerializedCTCSignal
         }
         
         RemoveSignalColorizers(signal.gameObject, ctx);
+
+        signal.modelController = signal.gameObject.GetComponentInChildren<CTCSignalModelController>();
+        _activeByDefault(signal.modelController) = null; // reset head configuration
+        signal.gameObject.SetActive(true);
     }
     
     private static void RemoveSignalColorizers(GameObject root, PatchingContext ctx)

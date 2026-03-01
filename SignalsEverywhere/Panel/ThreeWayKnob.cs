@@ -235,7 +235,7 @@ public class ThreeWayKnob : MonoBehaviour, IPointerClickHandler, IPointerEnterHa
     {
         if (!string.IsNullOrEmpty(DisplayName) && Schematic != null)
         {
-            Log.Information($"Invoking hover event for {DisplayName} to {hover} on schematic {Schematic.Name}");
+            Log.Debug($"Invoking hover event for {DisplayName} to {hover} on schematic {Schematic.Name}");
             Schematic.OnHighlightRequest?.Invoke(DisplayName, hover);
         }
     }

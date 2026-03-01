@@ -9,13 +9,6 @@ namespace SignalsEverywhere.Signals;
 
 public class SerializedCTCPredicateSignal : SerializedCTCSignal
 {
-    private static CTCPredicateSignal? _triplePrefab => Object.FindObjectsOfType<CTCPredicateSignal>(true)
-        .FirstOrDefault(s =>
-            s.headConfiguration == SignalHeadConfiguration.Triple && s.modelController.semaphoreHeads.Count == 3);
-
-    private static CTCPredicateSignal? _doublePrefab => Object.FindObjectsOfType<CTCPredicateSignal>(true)
-        .FirstOrDefault(s => s.headConfiguration == SignalHeadConfiguration.Double);
-    
     public struct HeadPredicates
     {
         public List<Predicate> Predicates { get; set; }
@@ -87,7 +80,9 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
 
     public void CreateFor(GameObject parent, CTCPatchingContext ctx)
     {
-        CTCPredicateSignal? signal = Object.Instantiate(HeadConfiguration == SignalHeadConfiguration.Triple ? _triplePrefab : _doublePrefab, parent.transform, false);
+        GameObject prefab = SignalPrefabStore.Shared.GetSignalType(ModelType, HeadConfiguration);
+        CTCPredicateSignal signal = Object.Instantiate(prefab, parent.transform, false).AddComponent<CTCPredicateSignal>();
+
         if (!signal)
         {
             throw new SCPatchingException("Unable to instantiate new signal");

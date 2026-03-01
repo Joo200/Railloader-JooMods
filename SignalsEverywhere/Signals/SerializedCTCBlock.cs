@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HarmonyLib;
 using StrangeCustoms.Tracks;
 using Track;
 using Track.Signals;
@@ -12,9 +13,12 @@ namespace SignalsEverywhere.Signals;
 
 public class SerializedCTCBlock
 {
+    private static readonly AccessTools.FieldRef<CTCBlock, TrackSpan[]> _spans = AccessTools.FieldRefAccess<CTCBlock, TrackSpan[]>(nameof(_spans));
+    
     public string Id { get; set; } = "";
     public List<SerializedSpan> Spans { get; set; } = new();
     public bool ThrownSwitchesSetOccupied { get; set; } = true;
+    public bool CreateInverse { get; set; } = false;
 
     public SerializedCTCBlock() { }
     
@@ -27,18 +31,26 @@ public class SerializedCTCBlock
 
     public void CreateFor(GameObject parent, CTCPatchingContext ctx)
     {
-        var ctcBlock = parent.AddComponent<CTCBlock>();
+        CTCBlock ctcBlock = parent.GetComponent<CTCBlock>() ?? parent.AddComponent<CTCBlock>();
         ctcBlock.id = Id;
         ctcBlock.thrownSwitchesSetOccupied = ThrownSwitchesSetOccupied;
         
+        ApplySpans(ctcBlock, ctx);
+
+        ctx.Blocks[Id] = ctcBlock;
+    }
+
+    public void ApplySpans(CTCBlock block, CTCPatchingContext ctx)
+    {
+        block.GetComponents<TrackSpan>().ToList().ForEach(Object.DestroyImmediate);
         int index = 0;
         foreach (var serializedSpan in Spans)
         {
             index++;
-            var trackSpan = parent.AddComponent<TrackSpan>();
+            var trackSpan = block.gameObject.AddComponent<TrackSpan>();
             var type = typeof(SerializedSpan);
-            trackSpan.id = $"{parent.name}-span-{index}";
-            trackSpan.name = $"{parent.name}-span-{index}";
+            trackSpan.id = $"{block.name}-span-{index}";
+            trackSpan.name = $"{block.name}-span-{index}";
             try
             {
                 type.GetMethod("ApplyTo", BindingFlags.NonPublic | BindingFlags.Instance)
@@ -49,9 +61,23 @@ public class SerializedCTCBlock
                 ctx.Logger.Error(e, $"Failed to apply span {index}");
                 Object.DestroyImmediate(trackSpan);
             }
-            
         }
+        _spans(block) = null;
         
-        ctx.Blocks[Id] = ctcBlock;
+        if (CreateInverse)
+            CreateInverseFor(block, ctx);
+    }
+
+    private void CreateInverseFor(CTCBlock block, CTCPatchingContext ctx)
+    {
+        if (ctx.Blocks.ContainsKey($"{block.id}-inv"))
+            return;
+        
+        CTCBlock inv = Object.Instantiate(block, block.transform.parent.transform, false);
+        inv.id = $"{block.id}-inv";
+        ctx.Blocks[inv.id] = inv;
+        var inversed = block.transform.parent.gameObject.AddComponent<CTCInversedBlock>();
+        inversed.A = block;
+        inversed.B = inv;
     }
 }

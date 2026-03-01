@@ -161,6 +161,15 @@ public class SignalCreator
         if (result == null)
             throw new Exception("Couldn't deserialize signals");
         
+        // TODO: This is some ugly and wonky implementation. But it's needed.
+        // Triple signals in ALJ have their second head removed so we force br-we here.
+        var triplePrefab = Object.FindObjectsOfType<CTCPredicateSignal>(true)
+            .FirstOrDefault(s => s.id == "br-we");
+        if (triplePrefab != null)
+            SignalPrefabStore.Shared.StorePrefab(triplePrefab, SignalPrefabStore.DefaultType, SignalHeadConfiguration.Triple);
+        else
+            logger.Warning("Couldn't find triple prefab for triple signal");
+        
         foreach (var section in result)
         {
             var go = root.Find(section.Key + " Module");
@@ -173,7 +182,9 @@ public class SignalCreator
             {
                 if (ctx.ElementModified(section.Key + "." + module.Key))
                 {
-                    gos.Add(CreateModule(go, ctx, module.Key, module.Value, section.Key + "." + module.Key));
+                    var resultGo = CreateModule(go, ctx, module.Key, module.Value, section.Key + "." + module.Key);
+                    if (resultGo != null)
+                        gos.Add(resultGo);
                 }
             }
         }
@@ -182,13 +193,8 @@ public class SignalCreator
         {
             foreach (var module in section.Value)
             {
-                if (ctx.ElementModified(section.Key + "." + module.Key))
+                if (module.Value != null)
                 {
-                    if (root.Find(section.Key) != null)
-                    {
-                        logger.Error($"Duplicate module id {section.Key}, patching existing modules is not allowed yet.");
-                        continue;
-                    }
                     module.Value.Finalize(ctx, section.Key + "." + module.Key);
                 }
             }
@@ -209,15 +215,16 @@ public class SignalCreator
                            $"{ctx.Intermediates.Count} intermediates");
     }
 
-    private GameObject CreateModule(Transform root, CTCPatchingContext ctx, string id, SerializedCTCModule module, string jsonPath)
+    private GameObject? CreateModule(Transform root, CTCPatchingContext ctx, string id, SerializedCTCModule? module, string jsonPath)
     {
-        module.Id = id;
         GameObject go;
         if (root.Find(id) != null)
         {
             logger.Debug($"Reusing module {id}");
             go = root.Find(id).gameObject;
             go.SetActive(false);
+            if (go.GetComponent<CTCMapFeatureTarget>() == null)
+                go.AddComponent<CTCMapFeatureTarget>();
         }
         else
         {
@@ -225,7 +232,16 @@ public class SignalCreator
             go = new GameObject(id);
             go.SetActive(false);
             go.transform.SetParent(root, false);
+            go.AddComponent<CTCMapFeatureTarget>();
         }
+
+        if (module == null)
+        {
+            Object.DestroyImmediate(go);
+            return null;
+        }
+        
+        module.Id = id;
         
         try
         {

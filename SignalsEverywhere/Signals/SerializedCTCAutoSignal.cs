@@ -9,13 +9,6 @@ namespace SignalsEverywhere.Signals;
 
 public class SerializedCTCAutoSignal : SerializedCTCSignal
 {
-    private static CTCAutoSignal? _singlePrefab => Object.FindObjectsOfType<CTCAutoSignal>(true)
-        .FirstOrDefault(s => s.headConfiguration == SignalHeadConfiguration.Single);
-
-    private static CTCAutoSignal? _doublePrefab => Object.FindObjectsOfType<CTCAutoSignal>(true)
-        .FirstOrDefault(s => s.headConfiguration == SignalHeadConfiguration.Double);
-
-
     public List<string> Blocks { get; set; } = new();
 
     public List<int> InterlockingRouteMapping { get; set; } = new();
@@ -36,8 +29,10 @@ public class SerializedCTCAutoSignal : SerializedCTCSignal
             ctx.Logger.Warning("AutoSignal does not support triple signal head configuration. Changing to double.");
             HeadConfiguration = SignalHeadConfiguration.Double;
         }
+
+        GameObject prefab = SignalPrefabStore.Shared.GetSignalType(ModelType, HeadConfiguration);
+        CTCAutoSignal signal = Object.Instantiate(prefab, parent.transform, false).AddComponent<CTCAutoSignal>();
         
-        CTCAutoSignal? signal = Object.Instantiate(HeadConfiguration == SignalHeadConfiguration.Double ? _doublePrefab : _singlePrefab , parent.transform, false);
         if (signal == null)
         {
             throw new SCPatchingException("Unable to instantiate new signal");

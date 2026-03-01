@@ -4,15 +4,20 @@
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <LangVersion>latest</LangVersion>
     <ImplicitUsings>false</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'!='Release' AND '$(Configuration)'!='PublishRelease'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <EmbedAllSources>true</EmbedAllSources>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='PublishRelease'">
+    <Optimize>true</Optimize>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
-    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
