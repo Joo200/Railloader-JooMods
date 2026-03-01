@@ -1,0 +1,62 @@
+{
+  "panel": {
+    "Mainline": [
+      {
+        "$find": [
+          {
+            "path": "X",
+            "value": 49
+          }
+        ],
+        "$selectAll": true,
+        "$remove": true
+      },
+      {
+        "$add": {
+          "Type": "Light",
+          "Block": "br-fo",
+          "X": 48,
+          "Y": 1
+        }
+      },
+      {
+        "$add": {
+          "Type": "SwitchRightTop",
+          "X": 48.5,
+          "Y": 2,
+          "Id": "BR-W"
+        }
+      },
+      {
+        "$add": {
+          "Type": "Light",
+          "Block": "bryson-w",
+          "X": 49,
+          "Y": 2,
+          "Color": "red",
+          "ShowTrack": false,
+          "Interlock": {
+            "Interlock": "br-w",
+            "VanillaDirKnobId": "46",
+            "SwitchLabels": [
+              "BR-W",
+              "45"
+            ],
+            "KnobOrder": [
+              1, 0
+            ],
+            "SignalLabel": "46"
+          }
+        }
+      },
+      {
+        "$add": {
+          "Type": "SwitchLeftTop",
+          "X": 49,
+          "Y": 2,
+          "Id": "45"
+        }
+      }
+    ]
+  }
+}

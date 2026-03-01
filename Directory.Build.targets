@@ -11,7 +11,7 @@
     <ItemGroup>
       <DebugFiles Include="$(OutputPath)/**/*" Exclude="$(OutputPath)/**/*.pdb;$(OutputPath)/**/*.xml" />
     </ItemGroup>
-    <Copy SourceFiles="@(DebugFiles)" DestinationFolder="$(GameModDir)" />
+    <Copy SourceFiles="@(DebugFiles)" DestinationFiles="@(DebugFiles->'$(GameModDir)\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
   <!-- Replace the default version if something was set for it -->
@@ -68,13 +68,13 @@
       <OutputFiles Condition="'$(AssemblyName)' == 'InterchangeReloader' AND Exists('$(OutputPath)InterchangeReloaderSkom.dll')" Include="$(OutputPath)InterchangeReloaderSkom.dll" />
     </ItemGroup>
 
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(ModDirectory)" Condition="'$(SkipPublishing)' != 'true' AND '@(OutputFiles)' != ''" />
+    <Copy SourceFiles="@(OutputFiles)" DestinationFiles="@(OutputFiles->'$(ModDirectory)\%(RecursiveDir)%(Filename)%(Extension)')" Condition="'$(SkipPublishing)' != 'true' AND '@(OutputFiles)' != ''" />
 
     <!-- Zip it up -->
     <Exec Command="powershell -Command &quot;Compress-Archive -Path '$(ModsDirectory)' -Destination '$(ZipName)'&quot;" Condition="'$(SkipZip)' != 'true' AND '$(SkipPublishing)' != 'true'" />
     
     <!-- Move them to the game directory -->
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(GameModDir)" Condition="'$(SkipPublishing)' != 'true'" />
+    <Copy SourceFiles="@(OutputFiles)" DestinationFiles="@(OutputFiles->'$(GameModDir)\%(RecursiveDir)%(Filename)%(Extension)')" Condition="'$(SkipPublishing)' != 'true'" />
   </Target>
   <Target Name="PublishReleaseTarget" AfterTargets="PrepareForPublishing" Condition="'$(Configuration)' == 'PublishRelease' AND '$(AssemblyName)' == 'ColorPatcher'">
     <PropertyGroup>

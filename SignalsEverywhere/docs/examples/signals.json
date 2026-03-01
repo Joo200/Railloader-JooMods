@@ -25,6 +25,26 @@
     }
   },
   "BR-EL-GI-WH": {
+    "FO-BR": {
+      "blocks": {
+        "br-fo": {
+          "spans": [
+            {
+              "lower": {
+                "segmentId": "Satq",
+                "distance": 0,
+                "end": "Start"
+              },
+              "upper": {
+                "segmentId": "Satq",
+                "distance": 65,
+                "end": "Start"
+              }
+            }
+          ]
+        }
+      }
+    },
     "BR-W": {
       "blocks": {
         "bryson-w": {
@@ -198,14 +218,6 @@
                   ],
                   "interlocking": "br-e",
                   "direction": "Left"
-                },
-                {
-                  "type": "Switch",
-                  "SwitchNode": "7u8d09",
-                  "switchSetting": "Normal",
-                  "Blocks": [],
-                  "Interlocking": null,
-                  "direction": "None"
                 }
               ],
               "nextCtcSignal": "br-em"
@@ -260,14 +272,6 @@
                   ],
                   "interlocking": "br-e",
                   "direction": "Left"
-                },
-                {
-                  "type": "Switch",
-                  "SwitchNode": "7u8d09",
-                  "switchSetting": "Normal",
-                  "Blocks": [],
-                  "Interlocking": null,
-                  "direction": "None"
                 }
               ],
               "nextCtcSignal": "br-es"
@@ -299,14 +303,6 @@
                   ],
                   "interlocking": "br-w",
                   "direction": "Right"
-                },
-                {
-                  "type": "Switch",
-                  "SwitchNode": "7u8d09",
-                  "switchSetting": "Normal",
-                  "Blocks": [],
-                  "Interlocking": null,
-                  "direction": "None"
                 }
               ],
               "nextCtcSignal": null

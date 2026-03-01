@@ -44,8 +44,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <TargetPath>signals.schema.json</TargetPath>
     </Content>
-    <Content Include="docs/*">
+    <Content Include="docs\**\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>docs\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </Content>
     <Content Include="README.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
