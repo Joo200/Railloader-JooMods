@@ -52,7 +52,6 @@ public class CTCPanel : WindowBase
         }
         WindowHelper.CreateWindow<CTCPanel>();
         Shared = WindowManager.Shared.GetWindow<CTCPanel>();
-        Shared._observer = _storage?.ObserveSystemMode(v => Shared?.TryRebuild());
     }
 
     public void TryRebuild()
@@ -102,6 +101,9 @@ public class CTCPanel : WindowBase
             return;
         };
         logger.Information("Rebuilding CTC Panel");
+
+        if (_observer == null)
+            _observer = _storage?.GetComponent<KeyValueObject>().Observe("mode", _ => TryRebuild(), false);
 
         bool activated = MapFeatureManager.Shared.AvailableFeatures.Any(s => s.identifier == "signals" && s.Unlocked);
         if (!activated || CTCPanelController.Shared == null)
