@@ -92,6 +92,7 @@ public class SignalPrefabStore
     }
 
     public GameObject PreparePrefab(CTCSignal target, string? type, SignalHeadConfiguration config) {
+        bool wasActive = target.gameObject.activeSelf;
         target.gameObject.SetActive(false);
         GameObject copy = Object.Instantiate(target.gameObject);
 
@@ -100,7 +101,7 @@ public class SignalPrefabStore
         Object.DontDestroyOnLoad(copy);
 
         StripComponents(copy);
-
+        target.gameObject.SetActive(wasActive);
         return copy;
     }
 
