@@ -1,0 +1,17 @@
+{
+  "manifestVersion": 1,
+  "id": "Joo.CustomSpawnPoints",
+  "name": "CustomSpawnPoints Mod",
+  "version": "$(AssemblyVersion)",
+  "assemblies": [ "CustomSpawnPoints" ],
+  "requires": [
+    {
+      "id": "railroader",
+      "notBefore": "2024.6.10"
+    },
+    {
+      "id": "railloader",
+      "notBefore": "1.10.0.2"
+    }
+  ]
+}
