@@ -16,7 +16,7 @@ public class PatchHelper
 
     public PatchHelper(JObject value)
     {
-        Value = value ?? throw new ArgumentNullException(nameof(value));
+        Value = new JObject(value) ?? throw new ArgumentNullException(nameof(value));
     }
 
     /// <summary>The current JSON value being patched.</summary>

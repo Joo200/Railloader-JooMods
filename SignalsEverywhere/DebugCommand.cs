@@ -4,7 +4,6 @@ using System.Linq;
 using Model.Ops;
 using Network;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Serilog;
 using SignalsEverywhere.Signals;
 using UI.Console;
@@ -12,7 +11,7 @@ using Object = UnityEngine.Object;
 
 namespace SignalsEverywhere;
 
-[ConsoleCommand("/signaldebug", "Sync the time to all clients")]
+[ConsoleCommand("/signaldebug", "Debugging signal stuff")]
 public class DebugCommand(SignalCreator signalCreator) : IConsoleCommand
 {
     public string Execute(string[] components)
@@ -29,36 +28,12 @@ public class DebugCommand(SignalCreator signalCreator) : IConsoleCommand
 
         if (components[1] == "dump" && components[2] == "signals")
         {
-            if (signalCreator.OriginalData == null)
-                return "No signals loaded. Check the logs for errors.";
-            var path = Path.Combine(SignalsEverywhere.Shared.ModDirectory, "signal-old.json");
-            using (StreamWriter streamWriter = new StreamWriter(path))
-                using (var jsonWriter = new JsonTextWriter(streamWriter) { Formatting = Formatting.Indented })
-                    signalCreator.Serializer.Serialize(jsonWriter, signalCreator.OriginalData);
-
-            if (signalCreator.PatchedData == null)
-                return "Dumped original data. Patched data contains errors.";
-            
-            path = Path.Combine(SignalsEverywhere.Shared.ModDirectory, "signal-patched.json");
-            using (StreamWriter streamWriter = new StreamWriter(path))
-                using (var jsonWriter = new JsonTextWriter(streamWriter) { Formatting = Formatting.Indented })
-                    signalCreator.Serializer.Serialize(jsonWriter, signalCreator.PatchedData);
-            
-            return "Successfully dumped signals to mod directory";
+            return signalCreator.DumpData();
         }
 
         if (components[1] == "dump" && components[2] == "panel")
         {
-            var dumped = SignalsEverywhere.Shared.PanelLayout;
-            if (dumped == null)
-                return "CTC Panel Layout is invalid. Unable to dump.";
-            
-            var deserialized = JObject.FromObject(dumped, signalCreator.Serializer);
-            var path = Path.Combine(SignalsEverywhere.Shared.ModDirectory, "panel-dump.json");
-            using (StreamWriter streamWriter = new StreamWriter(path))
-                using (var jsonWriter = new JsonTextWriter(streamWriter) { Formatting = Formatting.Indented })
-                    signalCreator.Serializer.Serialize(jsonWriter, signalCreator.PatchedData);
-            return "Successfully dumped panel to mod directory";
+            return DumpPanel(signalCreator);
         }
 
         if (components[1] == "distances")
@@ -87,7 +62,23 @@ public class DebugCommand(SignalCreator signalCreator) : IConsoleCommand
                     }
                 }
             }
+
+            return "Successfully dumped all distances from stations to the log.";
         }
-        return "see log";
+        return "Unknown command used. Usage: /signaldebug <dump> <signals|panel>";
+    }
+
+    public static string DumpPanel(SignalCreator signalCreator)
+    {
+        
+        var dumped = SignalsEverywhere.Shared.PanelLayout;
+        if (dumped == null)
+            return "CTC Panel Layout is invalid. Unable to dump.";
+            
+        var path = Path.Combine(SignalsEverywhere.Shared.ModDirectory, "panel-dump.json");
+        using (StreamWriter streamWriter = new StreamWriter(path))
+        using (var jsonWriter = new JsonTextWriter(streamWriter) { Formatting = Formatting.Indented })
+            signalCreator.Serializer.Serialize(jsonWriter, dumped);
+        return "Successfully dumped panel to mod directory";
     }
 }

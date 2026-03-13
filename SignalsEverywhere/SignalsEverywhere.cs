@@ -5,8 +5,10 @@ using System.Linq;
 using Railloader;
 using Serilog;
 using GalaSoft.MvvmLight.Messaging;
+using Game;
 using Game.Events;
 using HarmonyLib;
+using Network.Messages;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SignalsEverywhere.Panel;
@@ -17,6 +19,7 @@ using Track;
 using Track.Signals;
 using UI;
 using UI.Builder;
+using UI.Common;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Timer = System.Threading.Timer;
@@ -193,15 +196,59 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
     
     public void ModTabDidOpen(UIPanelBuilder builder)
     {
-        IReadOnlyDictionary<string, CTCBlock> storedBlocks = CTCPanelController.Shared.AllBlocks;
+        if (CTCPanelController.Shared == null)
+        {
+            builder.AddSection("CTC is not enabled", s =>
+            {
+                builder.AddLabel("The CTC Feature is not enabled. There is nothing to see here.");
+                builder.AddLabel("Buy the progressions for signals (Company mode) or enable the CTC MapFeature (Sandbox mode) first.");
+            });
+            return;
+        }
+        
         builder.AddSection("CTCPanel", sec =>
         {
             sec.AddButton("Rebuild CTCPanel", () =>
             {
                 LoadPanelLayout();
                 InitializeCtcPanel();
+                Console.Log("CTCPanel reloaded");
+            });
+
+            sec.AddButton("Dump CTCPanel", () =>
+            {
+                var result = DebugCommand.DumpPanel(_signalCreator);
+                Alert alert = new Alert(AlertStyle.Toast, AlertLevel.Info, result, TimeWeather.Now.TotalSeconds);
+                WindowManager.Shared.Present(alert);
             });
         });
+        builder.AddSection("Signals", sec =>
+        {
+            sec.AddButton("Reload Signal Definitions", () =>
+            {
+                try
+                {
+                    RegisterSignals();
+                    BuildSignals(CTCPanelController.Shared);
+                    Console.Log("Signals reloaded");
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e, "Error reloading signals");
+                    Alert alert = new Alert(AlertStyle.Toast, AlertLevel.Error, "Failed to reload signals. Check log for details", TimeWeather.Now.TotalSeconds);
+                    WindowManager.Shared.Present(alert);
+                }
+            });
+
+            sec.AddButton("Dump Signals", () =>
+            {
+                var result = _signalCreator.DumpData();
+                Alert alert = new Alert(AlertStyle.Toast, AlertLevel.Info, result, TimeWeather.Now.TotalSeconds);
+                WindowManager.Shared.Present(alert);
+            });
+        });
+        
+        IReadOnlyDictionary<string, CTCBlock> storedBlocks = CTCPanelController.Shared.AllBlocks;
         builder.AddSection("Blocks", sec =>
         {
             sec.AddDropdown(storedBlocks.Keys.ToList(), 0, selected =>

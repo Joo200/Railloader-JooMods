@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using HarmonyLib;
 using Helpers;
@@ -137,6 +138,7 @@ public class SignalCreator
             }
             features.Add(name, modules);
         }
+        logger.Information($"Deserialized {features.Count} features with {features.Sum(f => f.Value.Count)} modules");
         return JObject.FromObject(features, Serializer);
     }
 
@@ -149,7 +151,10 @@ public class SignalCreator
             return;
         }
         
-        OriginalData = Deserialize(root);
+        if (OriginalData == null)
+            OriginalData = Deserialize(root);
+        else
+            logger.Information("Reusing original signals data");
         var patched = SignalsEverywhere.Shared.GetMixintoJson("signals", OriginalData);
 
         PatchedData = patched.Value;
@@ -253,5 +258,25 @@ public class SignalCreator
         }
 
         return go;
+    }
+
+    public string DumpData()
+    {
+        if (OriginalData == null)
+            return "No signals loaded. Check the logs for errors.";
+        var path = Path.Combine(SignalsEverywhere.Shared.ModDirectory, "signal-old.json");
+        using (StreamWriter streamWriter = new StreamWriter(path))
+        using (var jsonWriter = new JsonTextWriter(streamWriter) { Formatting = Formatting.Indented })
+            Serializer.Serialize(jsonWriter, OriginalData);
+
+        if (PatchedData == null)
+            return "Dumped original data. Patched data contains errors.";
+            
+        path = Path.Combine(SignalsEverywhere.Shared.ModDirectory, "signal-patched.json");
+        using (StreamWriter streamWriter = new StreamWriter(path))
+        using (var jsonWriter = new JsonTextWriter(streamWriter) { Formatting = Formatting.Indented })
+            Serializer.Serialize(jsonWriter, PatchedData);
+            
+        return "Successfully dumped signals to mod directory";
     }
 }

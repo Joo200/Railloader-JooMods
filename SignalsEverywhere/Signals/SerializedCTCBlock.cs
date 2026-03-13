@@ -75,6 +75,8 @@ public class SerializedCTCBlock
         
         CTCBlock inv = Object.Instantiate(block, block.transform.parent.transform, false);
         inv.id = $"{block.id}-inv";
+        foreach (var s in inv.GetComponentsInChildren<TrackSpan>())
+            s.id += "-inv";
         ctx.Blocks[inv.id] = inv;
         var inversed = block.transform.parent.gameObject.AddComponent<CTCInversedBlock>();
         inversed.A = block;
