@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <Target Name="CopyToGame" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Debug'">
+    <Exec Command="powershell -Command &quot;(Get-Content '$(OutputPath)Definition.json') -replace '\$\(AssemblyVersion\)', '$(AssemblyVersion)' | Set-Content '$(OutputPath)Definition.json'&quot;" Condition="Exists('$(OutputPath)Definition.json')" />
     <ItemGroup>
       <DebugFiles Include="$(OutputPath)/**/*" Exclude="$(OutputPath)/**/*.pdb;$(OutputPath)/**/*.xml" />
     </ItemGroup>

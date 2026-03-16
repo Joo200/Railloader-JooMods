@@ -154,6 +154,8 @@ public class SerializedCTCModule
         {
             if (!ctx.ElementModified(jsonPath + ".autoSignals." + serSignal.Key))
                 continue;
+            if (serSignal.Value == null)
+                continue;
             if (ctx.AutoSignals.TryGetValue(serSignal.Key, out var signal))
                 serSignal.Value.ApplyTo(signal, ctx);
             else
@@ -164,13 +166,15 @@ public class SerializedCTCModule
         {
             if (!ctx.ElementModified(jsonPath + ".predicateSignals." + serSignal.Key))
                 continue;
+            if (serSignal.Value == null)
+                continue;
             if (ctx.PredicateSignals.TryGetValue(serSignal.Key, out var signal))
                 serSignal.Value.ApplyTo(signal, ctx);
             else
                 ctx.Logger.Warning($"Predicate signal {serSignal.Key} not found in patching context.");
         }
         
-        if (Intermediate != null && ctx.ElementModified(jsonPath + ".intermediate"))
+        if (Intermediate != null)
         {
             if (ctx.Intermediates.TryGetValue(Intermediate.Id, out var intermediate))
                 Intermediate.ApplyTo(intermediate, ctx);
