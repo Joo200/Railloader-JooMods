@@ -12,19 +12,13 @@ public class StateManager_Patch
 {
     private static readonly AccessTools.FieldRef<StateManager, SetupDescriptor> _setupDescriptor = AccessTools.FieldRefAccess<StateManager, SetupDescriptor>(nameof(_setupDescriptor)); 
     
-    [HarmonyPatch("GetSetupDescriptor")]
+    [HarmonyPatch("ApplyGameSetup")]
     [HarmonyPrefix]
-    public static void InjectCustomSpawnPoints(StateManager __instance)
+    public static void InjectCustomSpawnPoints(StateManager __instance, GameSetup? gameSetup)
     {
-        var matched = CustomSpawnPointsMod.Shared.SpawnPoints.FirstOrDefault(i => i.identifier == __instance.Storage.SetupId);
-        if (matched == null)
+        foreach (var serialized  in CustomSpawnPointsMod.Shared.SpawnPoints)
         {
-            Log.Information($"No match found for setup {__instance.Storage.SetupId}");
-            return;
+            serialized.Build();
         }
-
-        Log.Information($"Matched {matched.name} to {__instance.Storage.SetupId}");
-        var desc = matched.Build();
-        _setupDescriptor(__instance) = desc;
     }
 }
