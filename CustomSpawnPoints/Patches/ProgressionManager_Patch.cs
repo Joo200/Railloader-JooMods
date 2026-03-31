@@ -20,21 +20,21 @@ public class ProgressionManager_Patch
     {
         foreach (var desc in CustomSpawnPointsMod.Shared.SpawnPoints)
         {
-            var existing = Object.FindObjectsOfType<Progression>(true).FirstOrDefault(i => i.identifier == desc.identifier);
+            var existing = Object.FindObjectsOfType<Progression>(true).FirstOrDefault(i => i.identifier == desc.progressionId);
             if (existing != null)
             {
-                Log.Information($"Updating {desc.name} because it already exists");
+                Log.Information($"Updating {desc.progressionId} because it already exists");
                 existing.mapFeatureManager = __instance;
                 UpdateMapFeaturesAtStart(existing, desc);
                 continue;
             }
-            Log.Information($"Injecting {desc.name}");
+            Log.Information($"Injecting {desc.progressionId}");
             var progressionsObj = GameObject.Find("Progressions");
             var go = new GameObject(desc.identifier);
             go.transform.SetParent(progressionsObj.transform, false);
             var clone = go.AddComponent<Progression>();
             clone.name = desc.name;
-            clone.identifier = desc.identifier;
+            clone.identifier = desc.progressionId;
             clone.mapFeatureManager = __instance;
             UpdateMapFeaturesAtStart(clone, desc);
         } 

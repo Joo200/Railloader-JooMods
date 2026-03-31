@@ -22,13 +22,13 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
             NextCtcSignal = predicates.nextSignal?.id;
         }
         
-        public CTCPredicateSignal.HeadPredicates Apply(CTCPatchingContext ctx)
+        public CTCPredicateSignal.HeadPredicates Apply(CTCPatchingContext ctx, CTCPredicateSignalCrossoverExtension.HeadCrossoverPredicates extensionHeads)
         {
             CTCPredicateSignal.HeadPredicates headPredicates = new();
             headPredicates.predicates = new();
             foreach (var predicate in Predicates)
             {
-                headPredicates.predicates.Add(predicate.Apply(ctx));
+                headPredicates.predicates.Add(predicate.Apply(ctx, extensionHeads));
             }
             headPredicates.nextSignal = ctx.GetSignal(NextCtcSignal);
             return headPredicates;
@@ -44,6 +44,11 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
         public string? Interlocking { get; set; }
         public SignalDirection Direction { get; set; }
         
+        public string? Crossover { get; set; }
+        public string? CrossoverGroup { get; set; }
+        public CTCTrafficFilter CrossoverDirection { get; set; }
+        public bool IsNot { get; set; }
+        
         public Predicate() {}
 
         public Predicate(CTCPredicateSignal.Predicate predicate)
@@ -56,8 +61,20 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
             Direction = predicate.direction;
         }
 
-        public CTCPredicateSignal.Predicate Apply(CTCPatchingContext ctx)
+        public CTCPredicateSignal.Predicate Apply(CTCPatchingContext ctx, CTCPredicateSignalCrossoverExtension.HeadCrossoverPredicates? extensionHeads)
         {
+            if (Crossover != null && extensionHeads != null)
+            {
+                extensionHeads.predicates.Add(new CTCPredicateSignalCrossoverExtension.CrossoverPredicate
+                {
+                    crossover = ctx.Crossovers[Crossover],
+                    crossoverGroupId = CrossoverGroup ?? "",
+                    direction = CrossoverDirection,
+                    isNot = IsNot
+                });
+                return new CTCPredicateSignal.Predicate { type = CTCPredicateSignal.PredicateType.AlwaysFalse }; // Placeholder
+            }
+
             CTCPredicateSignal.Predicate predicate = new CTCPredicateSignal.Predicate();
             predicate.type = Type;
             predicate.switchNode = SwitchNode != null ? Graph.Shared.GetNode(SwitchNode) : null;
@@ -88,15 +105,23 @@ public class SerializedCTCPredicateSignal : SerializedCTCSignal
             throw new SCPatchingException("Unable to instantiate new signal");
         }
         base.ApplyTo(signal, ctx);
+        ApplyTo(signal, ctx);
         ctx.PredicateSignals[signal.id] = signal;
     }
 
     public void ApplyTo(CTCPredicateSignal signal, CTCPatchingContext ctx)
     {
+        var extension = signal.gameObject.GetComponent<CTCPredicateSignalCrossoverExtension>();
+        if (extension == null)
+            extension = signal.gameObject.AddComponent<CTCPredicateSignalCrossoverExtension>();
+        
+        extension.heads.Clear();
         signal.heads = new();
-        foreach (var predicate in Heads)
+        foreach (var head in Heads)
         {
-            signal.heads.Add(predicate.Apply(ctx));
+            var extensionHeads = new CTCPredicateSignalCrossoverExtension.HeadCrossoverPredicates();
+            extension.heads.Add(extensionHeads);
+            signal.heads.Add(head.Apply(ctx, extensionHeads));
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <MajorVersion>1</MajorVersion>
-    <MinorVersion>1</MinorVersion>
+    <MinorVersion>2</MinorVersion>
     <Configurations>Debug;Release;PublishRelease</Configurations>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>

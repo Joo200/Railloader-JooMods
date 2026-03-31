@@ -178,14 +178,28 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         var basedir = _moddingContext.ModsBaseDirectory;
         foreach (var mixinto in _moddingContext.GetMixintos(identifier))
         {
-            var path = Path.GetFullPath(mixinto.Mixinto);
-            if (!path.StartsWith(basedir))
+            try
             {
-                logger.Warning($"Mixinto {mixinto.Mixinto} is not in the mods directory.");
+                var path = Path.GetFullPath(mixinto.Mixinto);
+                if (!path.StartsWith(basedir))
+                {
+                    logger.Warning($"Mixinto {mixinto.Mixinto} is not in the mods directory.");
+                }
+
+                var text = File.ReadAllText(mixinto.Mixinto);
+                if (string.IsNullOrEmpty(text))
+                {
+                    logger.Error($"Mixinto {mixinto.Mixinto} is empty or an invalid file.");
+                    continue;
+                }
+                var json = JObject.Parse(text);
+                json.Remove("$schema");
+                patchHelper.ApplyPatch(mixinto.Mixinto, json);    
+            } catch (Exception e)
+            {
+                logger.Error(e, $"Error loading mixinto {mixinto.Mixinto} from mod {mixinto.Source.Id}");
             }
-            var json = JObject.Parse(File.ReadAllText(mixinto.Mixinto));
-            json.Remove("$schema");
-            patchHelper.ApplyPatch(mixinto.Mixinto, json);
+            
         }
 
         return patchHelper;

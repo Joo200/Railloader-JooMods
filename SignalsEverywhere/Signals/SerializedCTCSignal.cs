@@ -54,7 +54,17 @@ public abstract class SerializedCTCSignal
             var posRot = Graph.Shared.GetPositionRotation(loc);
             Vector3 offset = posRot.Rotation * Vector3.right * (Offset * (LeftSide ? -1.2F : 1));
             signal.transform.position = posRot.Position.GameToWorld() + offset;
-            signal.transform.rotation = posRot.Rotation * Quaternion.Euler(0, 180, 0);
+
+            var rotation = posRot.Rotation * Quaternion.Euler(0, 180, 0);
+            // if (System.DateTime.Now.Month == 4 && System.DateTime.Now.Day == 1)
+            {
+                rotation *= Quaternion.Euler(
+                    Random.Range(0f, 10f),
+                    Random.Range(0f, 10f),
+                    Random.Range(0f, 10f)
+                );
+            }
+            signal.transform.rotation = rotation;
         }
         
         RemoveSignalColorizers(signal.gameObject, ctx);

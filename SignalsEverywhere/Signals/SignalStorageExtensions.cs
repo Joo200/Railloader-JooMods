@@ -12,6 +12,8 @@ public static class SignalStorageExtensions
     private static KeyValueObject Kvo(this SignalStorage storage) => storage.GetComponent<KeyValueObject>();
     
     private static AccessTools.FieldRef<CTCAutoSignal, HashSet<IDisposable>> FieldRef = AccessTools.FieldRefAccess<CTCAutoSignal, HashSet<IDisposable>>("Observers");
+    private static AccessTools.FieldRef<CTCPredicateSignal, HashSet<IDisposable>> PredicateFieldRef = AccessTools.FieldRefAccess<CTCPredicateSignal, HashSet<IDisposable>>("Observers");
+    
     public static void UpdateSignalOnChange<T>(
         this CTCAutoSignal signal,
         Func<string, Action<T>, IDisposable> observeAction,
@@ -19,6 +21,18 @@ public static class SignalStorageExtensions
     {
         var method = typeof(CTCAutoSignal).GetMethod("SetNeedsUpdate", BindingFlags.Instance | BindingFlags.NonPublic);
         FieldRef(signal).Add(observeAction(itemId, _ => method.Invoke(signal, null)));
+    }
+
+    public static void UpdatePredicateSignalOnChange<T>(
+        this CTCPredicateSignal signal,
+        Func<string, Action<T>, IDisposable> observeAction,
+        string itemId)
+    {
+        var method = typeof(CTCPredicateSignal).GetMethod("SetNeedsUpdate", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+        if (method == null)
+            method = typeof(CTCSignal).GetMethod("SetNeedsUpdate", BindingFlags.Instance | BindingFlags.NonPublic);
+        
+        PredicateFieldRef(signal).Add(observeAction(itemId, _ => method.Invoke(signal, null)));
     }
     
     public static string CrossoverDirKey(string groupId) => $"crossover:{groupId}:direction";
