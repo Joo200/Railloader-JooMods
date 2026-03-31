@@ -56,7 +56,7 @@ public abstract class SerializedCTCSignal
             signal.transform.position = posRot.Position.GameToWorld() + offset;
 
             var rotation = posRot.Rotation * Quaternion.Euler(0, 180, 0);
-            // if (System.DateTime.Now.Month == 4 && System.DateTime.Now.Day == 1)
+            if (System.DateTime.Now.Month == 4 && System.DateTime.Now.Day == 1)
             {
                 rotation *= Quaternion.Euler(
                     Random.Range(0f, 10f),
