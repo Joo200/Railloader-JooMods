@@ -10,7 +10,7 @@ namespace CustomSpawnPoints.Patches;
 
 [HarmonyPatch(typeof(MapFeatureManager))]
 [HarmonyPatchCategory("CustomSpawnPoints")]
-public class ProgressionManager_Patch
+public class MapFeatureManager_Patch
 {
     private static readonly AccessTools.FieldRef<Progression, MapFeature[]> enableFeaturesAtStart = AccessTools.FieldRefAccess<Progression, MapFeature[]>("enableFeaturesAtStart"); 
     

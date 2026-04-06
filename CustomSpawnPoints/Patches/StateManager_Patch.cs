@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Game.Progression;
+﻿using Game.Progression;
 using Game.State;
 using HarmonyLib;
 using Serilog;
