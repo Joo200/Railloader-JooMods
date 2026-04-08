@@ -106,7 +106,7 @@ public class SerializedSetupDescriptor
             SetupDescriptor.CarPlacement value = new();
             value.carIdentifier = carIdentifier;
             value.marker = gameObject.AddComponent<TrackMarker>();
-            value.marker.Location = Graph.Shared.MakeLocation(location);
+            _location(value.marker) = location;
             value.marker.type = TrackMarkerType.Generic;
             value.marker.id = $"car-placement-{id}";
             value.wreck = wreck;
