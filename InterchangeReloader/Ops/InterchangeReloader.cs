@@ -236,7 +236,7 @@ public class InterchangeReloader : IndustryComponent, ICustomIndustryComponent
     private void GenerateWaybillForCar(IOpsCar car, IIndustryContext ctx, Order order)
     {
         var controller = OpsController.Shared;
-        var tons = order.Load != null ? ReflectionUtils.RestockCar(car, order.Load) : car.WeightInTons;
+        var tons = ReflectionUtils.RestockCar(car, order.Load);
         var payment = order.NoPayment ? 0 : controller.PaymentForMove(this, order.Destination, (int)tons);
         int graceDays = controller.CalculateGraceDays(this, order.Destination);
         Waybill waybill = new Waybill(ctx.Now, this, order.Destination, payment, false, order.Tag, graceDays);
