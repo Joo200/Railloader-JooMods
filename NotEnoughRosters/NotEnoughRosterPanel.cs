@@ -65,8 +65,6 @@ public class NotEnoughRosterPanel : WindowBase
         _headerClone = ReflectionUtils.FindEngineRosterPanelHeader();
         DataRebuild();
         Rebuild();
-        var rect = GetComponent<RectTransform>();
-        rect.position = new Vector2(Screen.width, Screen.height - 40);
         Window.ShowWindow();
 
         Messenger.Default.Register<CarTrainCrewChanged>(this, ml => { _hash = -1; });

@@ -87,8 +87,6 @@ public class CTCPanel : WindowBase
 
     public void Show()
     {
-        var rect = GetComponent<RectTransform>();
-        rect.position = new Vector2(Screen.width, Screen.height - 40);
         Window.ShowWindow();
         Rebuild();
     }
