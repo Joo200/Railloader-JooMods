@@ -9,6 +9,7 @@ using Track.Signals;
 using UI.Builder;
 using UI.Common;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SignalsEverywhere.Panel;
 
@@ -26,6 +27,7 @@ public class CTCPanel : WindowBase
     public static CTCPanel? Shared { get; private set; }
 
     private Dictionary<string, Schematic> _schematics = new();
+    private HashSet<string> _collapsedSections = new();
     private static SignalStorage? _storage => CTCPanelController.Shared?.GetComponentInParent<SignalStorage>();
     
     private static CTCPanelLayout _layout => SignalsEverywhere.Shared.PanelLayout;
@@ -90,14 +92,16 @@ public class CTCPanel : WindowBase
         Window.ShowWindow();
         Rebuild();
     }
-    
+
     public override void Populate(UIPanelBuilder builder)
     {
         if (_layout == null)
         {
             logger.Error("CTCPanelLayout not set");
             return;
-        };
+        }
+
+        ;
         logger.Information("Rebuilding CTC Panel");
 
         if (_observer == null)
@@ -106,7 +110,8 @@ public class CTCPanel : WindowBase
         bool activated = MapFeatureManager.Shared.AvailableFeatures.Any(s => s.identifier == "signals" && s.Unlocked);
         if (!activated || CTCPanelController.Shared == null)
         {
-            builder.HStack(b => b.AddTitle("CTC Panel requires the Signals Map Feature to be unlocked.", "Please buy the CTC progression first."));
+            builder.HStack(b => b.AddTitle("CTC Panel requires the Signals Map Feature to be unlocked.",
+                "Please buy the CTC progression first."));
             return;
         }
 
@@ -121,7 +126,7 @@ public class CTCPanel : WindowBase
             b.AddLabel("Activate CTC:");
             b.AddToggle(() => _storage.SystemMode == SystemMode.CTC,
                 v => _storage.SystemMode = v ? SystemMode.CTC : SystemMode.ABS);
-            
+
             b.Spacer();
             b.AddLabel("Highlight Schematic:");
             b.AddToggle(() => PanelPrefs.Highlight, v => PanelPrefs.Highlight = v);
@@ -136,29 +141,65 @@ public class CTCPanel : WindowBase
             b.AddLabel("Click Knobs:");
             b.AddToggle(() => PanelPrefs.ConfigSound, v => PanelPrefs.ConfigSound = v);
         });
-        
+        builder.VScrollView(BuildAllSections);
+    }
+
+    private void BuildAllSections(UIPanelBuilder builder) {
         foreach (var keyValuePair in _layout.panel)
         {
-            if (!_schematics.TryGetValue(keyValuePair.Key, out var schematic))
+            var sectionKey = keyValuePair.Key;
+            if (!_schematics.TryGetValue(sectionKey, out var schematic))
             {
-                var go = new GameObject($"Schematic_{keyValuePair.Key}");
+                var go = new GameObject($"Schematic_{sectionKey}");
                 schematic = go.AddComponent<Schematic>();
-                schematic.Initialize(keyValuePair.Key, keyValuePair.Value);
-                _schematics[keyValuePair.Key] = schematic;
+                schematic.Initialize(sectionKey, keyValuePair.Value);
+                _schematics[sectionKey] = schematic;
             }
             else
             {
                 schematic.Elements = keyValuePair.Value;
             }
 
-            builder.AddSection(keyValuePair.Key, b => { BuildPanelSection(b, schematic); });
+            bool collapsed = _collapsedSections.Contains(sectionKey);
+            builder.HStack(h =>
+            {
+                h.AddLabel(sectionKey);
+                h.AddButtonCompact(collapsed ? "+" : "-", () =>
+                {
+                    if (collapsed) _collapsedSections.Remove(sectionKey);
+                    else _collapsedSections.Add(sectionKey);
+                    Rebuild();
+                });
+            });
+
+            if (!collapsed)
+            {
+                builder.VStack(b => { BuildPanelSection(b, schematic); });
+            }
         }
         logger.Information("Built CTC Panel");
     }
 
     public void BuildPanelSection(UIPanelBuilder builder, Schematic schematic)
     {
-        var c = builder.HScrollView(s => s.VStack(b => schematic.Build(b, Scale)));
+        float scaledGridCellSize = ViewCreator.GridCellSize * Scale;
+        float totalCellsY = schematic.MaxY - schematic.MinY + 1;
+        float schematicHeight = totalCellsY * scaledGridCellSize;
+        float controlRowHeight = ViewCreator.FixedControlRowHeight;
+        float totalHeight = schematicHeight + (CTCPanelController.Shared.SystemMode == SystemMode.CTC ? controlRowHeight : 0) + 64f;
+        
+        var h = builder.HScrollView(s =>
+        {
+            s.VStack(b => schematic.Build(b, Scale));
+        });
+        
+        var layout = h.GetComponent<LayoutElement>();
+        if (layout != null)
+        {
+            layout.flexibleHeight = 0;
+            layout.preferredHeight = totalHeight;
+            layout.minHeight = totalHeight;
+        }
     }
 
 }

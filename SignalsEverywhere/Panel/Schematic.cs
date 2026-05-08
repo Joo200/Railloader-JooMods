@@ -75,7 +75,7 @@ public class Schematic : MonoBehaviour
         
         if (CTCPanelController.Shared.SystemMode == SystemMode.CTC)
         {
-            logger.Information("Adding interlocking control columns");
+            logger.Debug("Adding interlocking control columns");
             _controlRow = ViewCreator.CreateControlRow(builder, this);
             
             foreach (var element in Elements)
@@ -92,7 +92,7 @@ public class Schematic : MonoBehaviour
         }
         else
         {
-            logger.Information("CTC mode not active, skipping interlocking control columns");
+            logger.Debug("CTC mode not active, skipping interlocking control columns");
         }
     }
 
@@ -105,7 +105,7 @@ public class Schematic : MonoBehaviour
         if (Name != "Mainline")
             prefix = $"markerbranch-{Name.Replace(" ", "_").Replace("-", "_")}-";
         
-        logger.Information($"Found marker manager size with {_markerKvo.Keys.Count()} and filtered {_markerKvo.Keys.Count(k => k.StartsWith(prefix))} keys starting with {prefix}");
+        logger.Debug($"Found marker manager size with {_markerKvo.Keys.Count()} and filtered {_markerKvo.Keys.Count(k => k.StartsWith(prefix))} keys starting with {prefix}");
         foreach (var key in _markerKvo.Keys.Where(k => k.StartsWith(prefix)))
         {
             _observers.Add(_markerKvo.Observe(key, v => {
@@ -149,7 +149,7 @@ public class Schematic : MonoBehaviour
         var dict = val.DictionaryValue;
         if (!Markers.TryGetValue(key, out var marker))
         {
-            logger.Information($"Adding marker {key}");
+            logger.Debug($"Adding marker {key}");
             marker = PanelMarker.CreateMarker(_view, key, dict["text"].StringValue, MinY, MaxY, Name);
             Markers[key] = marker;
         }
