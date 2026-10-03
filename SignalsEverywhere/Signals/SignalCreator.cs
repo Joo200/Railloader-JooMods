@@ -124,6 +124,7 @@ public class SignalCreator
     
     public JObject Deserialize(Transform root)
     {
+        SplitModules(root);
         Dictionary<string, Dictionary<string, SerializedCTCModule>> features = new();
         foreach (var featureTarget in root.GetComponentsInChildren<CTCMapFeatureTarget>(true))
         {
@@ -142,6 +143,54 @@ public class SignalCreator
         return JObject.FromObject(features, Serializer);
     }
 
+    // A module only holds one interlocking. Some modules contain more than one (e.g. AJ has aj-e and aj-w as
+    // child objects), so every interlocking after the first is moved up to the feature as a module of its own.
+    // Only the parent changes; positions and references stay intact. This runs before each build, since
+    // OriginalData is reused when the scene is loaded again.
+    private void SplitModules(Transform root)
+    {
+        for (int f = 0; f < root.childCount; f++)
+        {
+            var feature = root.GetChild(f);
+            if (feature.GetComponent<CTCMapFeatureTarget>() == null)
+                continue;
+
+            var modules = new List<Transform>();
+            for (int i = 0; i < feature.childCount; i++)
+                modules.Add(feature.GetChild(i));
+
+            foreach (var module in modules)
+            {
+                var interlockings = module.GetComponentsInChildren<CTCInterlocking>(true);
+                if (interlockings.Length < 2)
+                    continue;
+
+                // The one SerializedCTCModule keeps for this module.
+                var kept = module.GetComponentInChildren<CTCInterlocking>(true);
+                foreach (var interlocking in interlockings)
+                {
+                    if (interlocking == kept)
+                        continue;
+                    var own = interlocking.transform;
+                    if (own == module || kept.transform.IsChildOf(own))
+                    {
+                        logger.Warning($"Module {module.name} has interlockings {kept.id} and {interlocking.id} on one object; only {kept.id} can be patched");
+                        continue;
+                    }
+                    if (feature.Find(own.name) != null)
+                        own.name = interlocking.id.ToUpper();
+                    if (feature.Find(own.name) != null)
+                    {
+                        logger.Warning($"Can't move interlocking {interlocking.id} out of module {module.name}: a module named {own.name} already exists");
+                        continue;
+                    }
+                    own.SetParent(feature, true);
+                    logger.Information($"Moved interlocking {interlocking.id} out of module {module.name} into its own module {own.name}");
+                }
+            }
+        }
+    }
+
     public void BuildSignals(CTCPanelController instance)
     {
         Transform? root = GetCtcRoot(instance);
@@ -152,9 +201,14 @@ public class SignalCreator
         }
         
         if (OriginalData == null)
+        {
             OriginalData = Deserialize(root);
+        }
         else
+        {
             logger.Information("Reusing original signals data");
+            SplitModules(root);
+        }
         var patched = SignalsEverywhere.Shared.GetMixintoJson("signals", OriginalData);
 
         PatchedData = patched.Value;

@@ -65,7 +65,11 @@ public class SerializedCTCInterlocking
             ctx.Logger.Error("Interlocking has no ID");
             return;
         }
-        CTCInterlocking interlocking = parent.GetComponent<CTCInterlocking>() ?? parent.AddComponent<CTCInterlocking>();
+        // Built-in modules can keep their interlocking on a child object (AJ/AJ-E); patch that one instead of
+        // adding a second interlocking with the same id.
+        CTCInterlocking interlocking = parent.GetComponentsInChildren<CTCInterlocking>(true).FirstOrDefault(i => i.id == Id)
+                                       ?? parent.GetComponent<CTCInterlocking>()
+                                       ?? parent.AddComponent<CTCInterlocking>();
         interlocking.id = Id;
         interlocking.displayName = DisplayName;
         ctx.Interlockings[Id] = interlocking;
