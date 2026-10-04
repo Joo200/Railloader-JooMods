@@ -112,8 +112,13 @@ public class SerializedCTCModule
                 Object.DestroyImmediate(signal.gameObject);
                 ctx.PredicateSignals.Remove(serSignal.Key);
             }
-            serSignal.Value.Id = serSignal.Key;
-            serSignal.Value.CreateFor(gameObject, ctx);
+
+            if (serSignal.Value != null)
+            {
+                ctx.Logger.Debug($"Creating predicate signal {serSignal.Key}");
+                serSignal.Value.Id = serSignal.Key;
+                serSignal.Value.CreateFor(gameObject, ctx);
+            }
         }
         
         foreach (var serBlock in Blocks)
