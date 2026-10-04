@@ -8,7 +8,7 @@
   "additionalProperties": {
     "type": "object",
     "additionalProperties": {
-      "$ref": "#/definitions/SerializedCTCModule"
+      "anyOf": [ { "$ref": "#/definitions/SerializedCTCModule" }, { "type": "null" } ]
     }
   },
   "definitions": {
@@ -18,80 +18,89 @@
         "id": { "type": "string" },
         "blocks": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/definitions/SerializedCTCBlock" }
+          "additionalProperties": { "anyOf": [ { "$ref": "#/definitions/SerializedCTCBlock" }, { "type": "null" } ] }
         },
         "autoSignals": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/definitions/SerializedCTCAutoSignal" }
+          "additionalProperties": { "anyOf": [ { "$ref": "#/definitions/SerializedCTCAutoSignal" }, { "type": "null" } ] }
         },
         "predicateSignals": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/definitions/SerializedCTCPredicateSignal" }
+          "additionalProperties": { "anyOf": [ { "$ref": "#/definitions/SerializedCTCPredicateSignal" }, { "type": "null" } ] }
         },
-        "interlocking": { "$ref": "#/definitions/SerializedCTCInterlocking" },
-        "intermediate": { "$ref": "#/definitions/SerializedCTCIntermediate" },
-        "crossover": { "$ref": "#/definitions/SerializedCTCCrossover" }
+        "interlocking": { "anyOf": [ { "$ref": "#/definitions/SerializedCTCInterlocking" }, { "type": "null" } ] },
+        "intermediate": { "anyOf": [ { "$ref": "#/definitions/SerializedCTCIntermediate" }, { "type": "null" } ] },
+        "crossover": { "anyOf": [ { "$ref": "#/definitions/SerializedCTCCrossover" }, { "type": "null" } ] }
       },
       "additionalProperties": false
     },
     "SerializedCTCBlock": {
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "spans": {
           "type": "array",
           "items": { "$ref": "#/definitions/SerializedSpan" }
         },
-        "thrownSwitchesSetOccupied": { "type": "boolean" }
+        "thrownSwitchesSetOccupied": { "type": "boolean", "default": true },
+        "createInverse": { "type": "boolean", "default": false }
       },
       "required": [ "spans" ],
       "additionalProperties": false
     },
     "SerializedCTCAutoSignal": {
-      "allOf": [
-        { "$ref": "#/definitions/SerializedCTCSignal" },
-        {
-          "type": "object",
-          "properties": {
-            "blocks": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "interlockingRouteMapping": {
-              "type": "array",
-              "items": { "type": "integer" }
-            }
-          },
-          "additionalProperties": false
+      "type": "object",
+      "allOf": [ { "$ref": "#/definitions/SerializedCTCSignal" } ],
+      "properties": {
+        "id": true,
+        "modelType": true,
+        "headConfiguration": true,
+        "direction": true,
+        "location": true,
+        "leftSide": true,
+        "offset": true,
+        "blocks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "interlockingRouteMapping": {
+          "type": "array",
+          "items": { "type": "integer" }
         }
-      ]
+      },
+      "additionalProperties": false
     },
     "SerializedCTCPredicateSignal": {
-      "allOf": [
-        { "$ref": "#/definitions/SerializedCTCSignal" },
-        {
-          "type": "object",
-          "properties": {
-            "heads": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/HeadPredicates" }
-            }
-          },
-          "additionalProperties": false
+      "type": "object",
+      "allOf": [ { "$ref": "#/definitions/SerializedCTCSignal" } ],
+      "properties": {
+        "id": true,
+        "modelType": true,
+        "headConfiguration": true,
+        "direction": true,
+        "location": true,
+        "leftSide": true,
+        "offset": true,
+        "heads": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/HeadPredicates" }
         }
-      ]
+      },
+      "additionalProperties": false
     },
     "SerializedCTCSignal": {
+      "description": "Shared signal properties. Deliberately has no additionalProperties: false; each signal type re-lists these keys and closes itself, since draft-07 additionalProperties cannot see through allOf.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
+        "modelType": { "type": "string", "default": "Vanilla" },
         "headConfiguration": { "$ref": "#/definitions/SignalHeadConfiguration" },
         "direction": { "$ref": "#/definitions/CTCDirection" },
         "location": { "$ref": "#/definitions/SerializedLocation" },
         "leftSide": { "type": "boolean", "default": false },
-        "offset": { "type": "integer", "default": 3.0 }
+        "offset": { "type": "integer", "default": 3 }
       },
-      "required": [ "headConfiguration", "direction", "location" ],
-      "additionalProperties": false
+      "required": [ "headConfiguration", "direction", "location" ]
     },
     "SerializedCTCInterlocking": {
       "type": "object",
@@ -129,10 +138,10 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "signalLeft": { "type": "string" },
-        "signalRight": { "type": "string" }
+        "signalLeft": { "type": [ "string", "null" ] },
+        "signalRight": { "type": [ "string", "null" ] }
       },
-      "required": [ "id", "blocks", "signals", "signalLeft", "signalRight" ],
+      "required": [ "id", "blocks", "signals" ],
       "additionalProperties": false
     },
     "SerializedCTCCrossover": {
@@ -167,7 +176,8 @@
       "type": "object",
       "properties": {
         "lower": { "$ref": "#/definitions/SerializedLocation" },
-        "upper": { "$ref": "#/definitions/SerializedLocation" }
+        "upper": { "$ref": "#/definitions/SerializedLocation" },
+        "normalize": { "type": "boolean", "default": false }
       },
       "required": [ "lower", "upper" ],
       "additionalProperties": false
@@ -189,7 +199,7 @@
           "type": "array",
           "items": { "$ref": "#/definitions/Predicate" }
         },
-        "nextCtcSignal": { "type": "string" }
+        "nextCtcSignal": { "type": [ "string", "null" ] }
       },
       "additionalProperties": false
     },
@@ -197,14 +207,15 @@
       "type": "object",
       "properties": {
         "type": { "$ref": "#/definitions/PredicateType" },
-        "switchNode": { "type": "string" },
-        "switchSetting": { "$ref": "#/definitions/SwitchSetting" },
+        "switchNode": { "type": [ "string", "null" ] },
+        "switchSetting": { "anyOf": [ { "$ref": "#/definitions/SwitchSetting" }, { "type": "null" } ] },
         "blocks": {
-          "type": "array",
+          "type": [ "array", "null" ],
           "items": { "type": "string" }
         },
-        "interlocking": { "type": "string" },
-        "direction": { "$ref": "#/definitions/CTCDirection" }
+        "interlocking": { "type": [ "string", "null" ] },
+        "direction": { "anyOf": [ { "$ref": "#/definitions/SignalDirection" }, { "type": "null" } ] },
+        "crossoverGroup": { "type": [ "string", "null" ] }
       },
       "additionalProperties": false
     },
@@ -216,7 +227,7 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "nextSignal": { "type": "string" }
+        "nextSignal": { "type": [ "string", "null" ] }
       },
       "additionalProperties": false
     },
@@ -240,7 +251,7 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "nextSignal": { "type": "string" }
+        "nextSignal": { "type": [ "string", "null" ] }
       },
       "additionalProperties": false
     },
@@ -283,6 +294,10 @@
     "CTCDirection": {
       "type": "string",
       "enum": [ "Left", "Right" ]
+    },
+    "SignalDirection": {
+      "type": "string",
+      "enum": [ "None", "Left", "Right" ]
     },
     "SwitchSetting": {
       "type": "string",
