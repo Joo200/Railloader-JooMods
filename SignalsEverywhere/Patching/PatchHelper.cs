@@ -290,8 +290,20 @@ public class PatchHelper
         if (!JToken.DeepEquals(existing, working))
         {
             target[propertyName] = working;
-            // Note: We don't TouchDeep(working) here because MergeArrayItem/ApplyMatchedArrayElementInstruction
-            // handles touching specific elements.
+            TouchChangedElements((JArray)existing!, (JArray)target[propertyName]!, patchSource);
+        }
+    }
+
+    // The items were merged into a detached copy, so the touches recorded while merging have paths relative to
+    // that copy (e.g. "0.nextSignal"), not to the document. Touch the attached array and its changed elements
+    // again so ElementModified sees the change.
+    private void TouchChangedElements(JArray before, JArray after, string patchSource)
+    {
+        Touch(after, patchSource);
+        for (var i = 0; i < after.Count; i++)
+        {
+            if (i >= before.Count || !JToken.DeepEquals(before[i], after[i]))
+                TouchDeep(after[i], patchSource);
         }
     }
 
