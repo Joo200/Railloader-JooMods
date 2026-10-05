@@ -221,6 +221,14 @@ public class PatchHelper
             }
         }
 
+        // $remove drops the property whatever its type; MergeObject only handles $replace and $moveTo.
+        if (instr is { IsValid: true, Remove: true })
+        {
+            TouchDeep(existing, patchSource);
+            target.Remove(propertyName);
+            return;
+        }
+
         if (existing.Type == JTokenType.Object)
         {
             var merged = MergeObject(
