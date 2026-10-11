@@ -710,7 +710,7 @@
       },
       {
         "Type": "Light",
-        "Block": "bryson-e",
+        "Block": "bryson-em",
         "X": 53,
         "Y": 2,
         "Color": "red",
@@ -1241,7 +1241,7 @@
       },
       {
         "Type": "Light",
-        "Block": "sy-app",
+        "Block": "sy-w",
         "X": 89,
         "Y": 2,
         "Interlock": {
