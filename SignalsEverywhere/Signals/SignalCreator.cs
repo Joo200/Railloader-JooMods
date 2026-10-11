@@ -210,6 +210,7 @@ public class SignalCreator
             go.SetActive(true);
         }
         
+        ReferenceRepair.Apply();
         Graph.Shared.RebuildCollections();
         AccessTools.Field(typeof(CTCPanelController), "_cachedBlocks").SetValue(instance, null);
         AccessTools.Field(typeof(CTCPanelController), "_cachedInterlockings").SetValue(instance, null);
