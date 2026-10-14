@@ -76,6 +76,8 @@ Detailed documentation for each component can be found in the `docs/` directory:
 *   [**Intermediates**](docs/intermediates.md): Group blocks and signals between interlockings.
 *   [**Crossovers**](docs/crossovers.md): Manage connections between parallel tracks.
 
+For a step-by-step walkthrough (how the pieces fit together, how patching works, RailForge's checks, testing, and worked examples), see the [**Modding Guide**](docs/modding-guide/README.md).
+
 ---
 
 ## 4. Summary Tips
