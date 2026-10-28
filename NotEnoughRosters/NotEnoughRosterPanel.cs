@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+#if !RR2026
 using GalaSoft.MvvmLight.Messaging;
+#endif
 using Game.Events;
 using Game.State;
 using Model;
@@ -10,6 +12,9 @@ using Serilog;
 using UI.Builder;
 using UI.Common;
 using UI.LazyScrollList;
+#if RR2026
+using UI.Windows;
+#endif
 using UnityEngine;
 using UnityEngine.UI;
 using ILogger = Serilog.ILogger;
@@ -34,11 +39,19 @@ public class NotEnoughRosterPanel : WindowBase
     private readonly List<LazyScrollList> _scrollList = new();
     private bool _splitView;
 
+    private const float SplitWidth = 800f;
+    private const float SplitHysteresis = 20f;
+
     public override string WindowIdentifier => "NER";
     public override string Title => "Not Enough Rosters";
+#if RR2026
+    // The game's own roster opens 560 wide in 2026.1: narrower, its status column has no room.
+    public override Vector2Int DefaultSize => new(560, 800);
+#else
     public override Vector2Int DefaultSize => new(400, 800);
+#endif
     public override Window.Position DefaultPosition => Window.Position.UpperRight;
-    public override Window.Sizing Sizing => Window.Sizing.Resizable(DefaultSize);
+    public override Window.Sizing Sizing => Window.Sizing.Resizable(new Vector2Int(250, 150));
 
     public static void CreateInstance(Dictionary<string, LocomotiveFilter> data)
     {
@@ -56,10 +69,10 @@ public class NotEnoughRosterPanel : WindowBase
 
     public void Show()
     {
+        Window.OnShownWillChange -= WindowShownWillChange;
         Window.OnShownWillChange += WindowShownWillChange;
-        Window.OnDidResize += WindowResized;
 
-        _splitView = Window.GetContentSize().x >= 800;
+        _splitView = Window.GetContentSize().x >= SplitWidth;
 
         _modifiedCell = ReflectionUtils.CloneScrollListPrefab();
         _headerClone = ReflectionUtils.FindEngineRosterPanelHeader();
@@ -67,19 +80,31 @@ public class NotEnoughRosterPanel : WindowBase
         Rebuild();
         Window.ShowWindow();
 
+#if RR2026
+        EventBus.Subscribe<CarTrainCrewChanged>(this, ml => { _hash = -1; });
+#else
         Messenger.Default.Register<CarTrainCrewChanged>(this, ml => { _hash = -1; });
+#endif
     }
 
     public void Close()
     {
         Window.CloseWindow();
 
+#if RR2026
+        EventBus.Unsubscribe(this);
+#else
         Messenger.Default.Unregister(this);
+#endif
     }
 
-    private void WindowResized(Vector2 size)
+    // Window.OnDidResize only fires when the drag ends, so poll the width to switch layouts while resizing.
+    // The gap between the two thresholds keeps it from flickering at the boundary.
+    private void Update()
     {
-        var shouldSplit = size.x >= 800;
+        if (!Window.IsShown) return;
+        var width = Window.GetContentSize().x;
+        var shouldSplit = _splitView ? width >= SplitWidth - SplitHysteresis : width >= SplitWidth;
         if (_splitView != shouldSplit)
         {
             _splitView = shouldSplit;
@@ -129,7 +154,11 @@ public class NotEnoughRosterPanel : WindowBase
     {
         var shared = TrainController.Shared;
 
+#if RR2026
+        _cachedFavorites = PlayerPropertiesManager.Shared.LocalProperties.FavoriteEngineIds;
+#else
         _cachedFavorites = PlayerPropertiesManager.Shared.MyProperties.FavoriteEngineIds;
+#endif
 
         var selectedCar = shared.SelectedCar;
         var result = new Dictionary<string, List<NotEnoughRosterRowData>>();
@@ -181,21 +210,24 @@ public class NotEnoughRosterPanel : WindowBase
         var first = new Dictionary<string, List<NotEnoughRosterRowData>>();
         var second = new Dictionary<string, List<NotEnoughRosterRowData>>();
 
+        // Keep sections in filter order: fill the left column until it holds about half the rows,
+        // then continue in the right column.
+        var sections = _data.Where(e => e.Value.Count > 0).ToList();
+        var half = sections.Sum(e => e.Value.Count) / 2f;
         var countA = 0;
-        var countB = 0;
+        var inSecond = false;
 
-        foreach (var kvp in _data.OrderByDescending(e => e.Value.Count))
+        foreach (var kvp in sections)
         {
-            if (kvp.Value.Count == 0) continue;
-            if (countA <= countB)
+            if (!inSecond && (countA == 0 || countA + kvp.Value.Count / 2f <= half))
             {
                 first[kvp.Key] = kvp.Value;
                 countA += kvp.Value.Count;
             }
             else
             {
+                inSecond = true;
                 second[kvp.Key] = kvp.Value;
-                countB += kvp.Value.Count;
             }
         }
 
@@ -209,6 +241,22 @@ public class NotEnoughRosterPanel : WindowBase
     public override void Populate(UIPanelBuilder builder)
     {
         _scrollList.Clear();
+#if RR2026
+        // In 2026.1 the builder's Spacer stretches vertically too, and the row took the panel's spare height: the spacer
+        // only pushes the button right.
+        builder.HStack(h =>
+        {
+            var spacer = h.Spacer().GetComponent<LayoutElement>();
+            if (spacer != null) spacer.flexibleHeight = 0f;
+            h.AddButtonCompact("Edit Filters", () => NotEnoughRostersSettingsWindow.Shared?.Show());
+        }).Height(30f);
+#else
+        builder.HStack(h =>
+        {
+            h.Spacer();
+            h.AddButtonCompact("Edit Filters", () => NotEnoughRostersSettingsWindow.Shared?.Show());
+        });
+#endif
         if (_splitView && _data.Count > 1)
             SplitData(builder);
         else
@@ -275,11 +323,15 @@ public class NotEnoughRosterPanel : WindowBase
 
     private void SaveCachedFavorites()
     {
+#if RR2026
+        PlayerPropertiesManager.Shared.SetFavoriteEngineIds(_cachedFavorites);
+#else
         PlayerPropertiesManager.Shared.UpdateMyProperties(props =>
         {
             props.FavoriteEngineIds = _cachedFavorites;
             return props;
         });
+#endif
     }
 
     public void SelectEngine(BaseLocomotive engine, bool select)

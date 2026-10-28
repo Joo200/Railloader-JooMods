@@ -5,7 +5,8 @@
         <Configurations>Debug;Release;PublishRelease</Configurations>
         <Platforms>AnyCPU</Platforms>
     </PropertyGroup>
-    <ItemGroup>
+    <!-- Legacy Railroader (Railloader). -p:RR=2026 builds for Railroader 2026.1 instead (below). -->
+    <ItemGroup Condition="'$(RR)' != '2026'">
         <GameAssembly Include="Assembly-CSharp"/>
         <GameAssembly Include="Serilog"/>
         <GameAssembly Include="Railloader.Interchange"/>
@@ -16,5 +17,21 @@
         <GameAssembly Include="Unity.TextMeshPro"/>
         <GameAssembly Include="KeyValue.Runtime"/>
         <GameAssembly Include="Newtonsoft.Json"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(RR)' != '2026'">
+        <None Remove="Info.json"/>
+    </ItemGroup>
+    <!-- Railroader 2026.1: the game's own loader (Info.json, IModEntryPoint), no Railloader, and no Harmony shipped with
+         the game. -->
+    <PropertyGroup Condition="'$(RR)' == '2026'">
+        <DefineConstants>$(DefineConstants);RR2026</DefineConstants>
+        <GameModDir Condition="'$(GameModsDir)' != ''">$(GameModsDir)\$(AssemblyName)</GameModDir>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(RR)' == '2026'">
+        <_GameManaged Include="$(GameDir)\Railroader_Data\Managed\*.dll" Exclude="$(GameDir)\Railroader_Data\Managed\System*.dll;$(GameDir)\Railroader_Data\Managed\Mono*.dll;$(GameDir)\Railroader_Data\Managed\mscorlib.dll;$(GameDir)\Railroader_Data\Managed\netstandard.dll;$(GameDir)\Railroader_Data\Managed\Microsoft*.dll"/>
+        <GameAssembly Include="@(_GameManaged->'%(Filename)')"/>
+        <PackageReference Include="Lib.Harmony" Version="2.3.3"/>
+        <Content Include="Info.json" CopyToOutputDirectory="Always"/>
+        <Content Remove="Definition.json"/>
     </ItemGroup>
 </Project>

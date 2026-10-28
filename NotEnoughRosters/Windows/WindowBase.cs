@@ -2,12 +2,21 @@
 
 using UI;
 using UI.Builder;
+#if RR2026
+using UI.Windows;
+#else
 using UI.Common;
+#endif
 using UnityEngine;
 
 namespace NotEnoughRosters.Windows;
 
+#if RR2026
+// Railroader 2026.1's WindowManager builds a builder window from its identifier and WindowConfig.
+public abstract class WindowBase : MonoBehaviour, IBuilderWindow
+#else
 public abstract class WindowBase : MonoBehaviour, IProgrammaticWindow
+#endif
 {
     private UIPanel _panel;
     protected Window Window => GetComponent<Window>();
@@ -18,6 +27,12 @@ public abstract class WindowBase : MonoBehaviour, IProgrammaticWindow
     public abstract Window.Position DefaultPosition { get; }
     public abstract Window.Sizing Sizing { get; }
     public abstract void Populate(UIPanelBuilder builder);
+
+#if RR2026
+    string IBuilderWindow.Identifier => WindowIdentifier;
+
+    public WindowConfig Config => new WindowConfig(DefaultSize, DefaultPosition, Sizing);
+#endif
 
     public void Rebuild()
     {

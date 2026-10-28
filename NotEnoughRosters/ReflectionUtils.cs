@@ -5,6 +5,9 @@ using UI.Common;
 using UI.EngineRoster;
 using UI.LazyScrollList;
 using UnityEngine;
+#if RR2026
+using UI.Windows;
+#endif
 
 namespace NotEnoughRosters;
 

@@ -2,13 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
 using Game.State;
 using HarmonyLib;
 using Newtonsoft.Json;
 using NotEnoughRosters.Patches;
+#if RR2026
+using Railroader.Modding;
+#else
+using GalaSoft.MvvmLight.Messaging;
 using Railloader;
+#endif
 using Serilog;
 using UI.Builder;
 using UI.EngineRoster;
@@ -17,36 +21,97 @@ using ILogger = Serilog.ILogger;
 
 namespace NotEnoughRosters;
 
+#if RR2026
+// Railroader 2026.1 loads the mod here (Info.json "assemblies"). There's no mod settings tab: the filter editor opens
+// from the roster's "Edit Filters" button.
+public sealed class ModEntryPoint : IModEntryPoint
+{
+    public void OnModLoad(IModContext context)
+    {
+        NotEnoughRosters.Shared = new NotEnoughRosters(context.ModDirectory);
+        NotEnoughRosters.Shared.OnEnable();
+    }
+
+    public void OnModUnload()
+    {
+        NotEnoughRosters.Shared?.OnDisable();
+    }
+}
+
+public class NotEnoughRosters
+{
+    private const string HarmonyId = "joo/not-enough-rosters";
+
+    public static NotEnoughRosters Shared { get; internal set; } = null!;
+
+    private readonly string _directory;
+
+    private readonly IDisposable _mapDidLoad;
+#else
 public class NotEnoughRosters : SingletonPluginBase<NotEnoughRosters>, IModTabHandler
 {
-    private readonly ILogger logger = Log.ForContext<NotEnoughRosters>();
-
     private readonly IModDefinition _modDefinition;
+
+    private string _directory => _modDefinition.Directory;
+
+    private string HarmonyId => _modDefinition.Id;
+#endif
+
+    private readonly ILogger logger = Log.ForContext<NotEnoughRosters>();
 
     private Dictionary<string, LocomotiveFilter> _rosterFilters = new();
     private UIState<string?> _selectedFilterState = new(null);
 
+#if RR2026
+    public NotEnoughRosters(string directory)
+    {
+        _directory = directory;
+
+        _rosterFilters = GetRoasters(Path.Combine(_directory, "trains.json"));
+        _mapDidLoad = EventBus.Subscribe<MapDidLoadEvent>(ml => CreateWindows());
+    }
+#else
     public NotEnoughRosters(IModdingContext moddingContext, IModDefinition self)
     {
         _modDefinition = self;
 
-        var file = Path.Combine(self.Directory, "trains.json");
-        _rosterFilters = GetRoasters(file);
-        Messenger.Default.Register<MapDidLoadEvent>(this,
-            ml => { NotEnoughRosterPanel.CreateInstance(_rosterFilters); });
+        _rosterFilters = GetRoasters(Path.Combine(_directory, "trains.json"));
+        Messenger.Default.Register<MapDidLoadEvent>(this, ml => CreateWindows());
+    }
+#endif
+
+    private void CreateWindows()
+    {
+        NotEnoughRosterPanel.CreateInstance(_rosterFilters);
+        NotEnoughRostersSettingsWindow.CreateInstance();
     }
 
-
+    // The filter editor lives in its own window: a list/detail view collapses when a host
+    // (e.g. RailForge) wraps the mod tab in a scroll view, so the tab only links to it.
     public void ModTabDidOpen(UIPanelBuilder builder)
     {
         builder.HStack(h =>
         {
-            h.AddButton("Toggle Original Roster", () =>
-            {
-                EngineRosterPanel_Toggle_Patch.DisablePatch = true;
-                EngineRosterPanel.Toggle();
-                EngineRosterPanel_Toggle_Patch.DisablePatch = false;
-            });
+            h.AddButton("Edit Filters", () => NotEnoughRostersSettingsWindow.Shared?.Show());
+            h.AddButton("Toggle Original Roster", ToggleOriginalRoster);
+            h.Spacer();
+        });
+        if (NotEnoughRostersSettingsWindow.Shared == null)
+            builder.AddLabel("Load a game to edit the roster filters.");
+    }
+
+    internal static void ToggleOriginalRoster()
+    {
+        EngineRosterPanel_Toggle_Patch.DisablePatch = true;
+        EngineRosterPanel.Toggle();
+        EngineRosterPanel_Toggle_Patch.DisablePatch = false;
+    }
+
+    internal void BuildFilterEditor(UIPanelBuilder builder, Action rebuildAll)
+    {
+        builder.HStack(h =>
+        {
+            h.AddButton("Toggle Original Roster", ToggleOriginalRoster);
             h.Spacer();
             h.AddButton("Add Filter", () =>
             {
@@ -54,36 +119,24 @@ public class NotEnoughRosters : SingletonPluginBase<NotEnoughRosters>, IModTabHa
                 _rosterFilters[newName] = new LocomotiveFilter();
                 _selectedFilterState.Value = newName;
                 SaveRoasters();
-                builder.Rebuild();
+                rebuildAll.Invoke();
             });
         });
 
         var listItems = _rosterFilters.Select(kvp => new UIPanelBuilder.ListItem<LocomotiveFilter>(kvp.Key, kvp.Value, "Filters", kvp.Key)).ToList();
 
-        var outerHStack = builder.HStack(h =>
+        builder.AddListDetail(listItems, _selectedFilterState!, (pb, filter) =>
         {
-            h.AddListDetail(listItems, _selectedFilterState!, (pb, filter) =>
+            var key = _selectedFilterState.Value;
+            if (key == null || !_rosterFilters.TryGetValue(key, out var currentFilter) || currentFilter != filter)
             {
-                var key = _selectedFilterState.Value;
-                if (key == null || !_rosterFilters.TryGetValue(key, out var currentFilter) || currentFilter != filter)
-                {
-                    pb.AddLabel("Select a filter to edit");
-                    return;
-                }
-                pb.VStack(detailBuilder =>
-                {
-                    PrintSettings(detailBuilder, key, filter, () => builder.Rebuild());
-                    detailBuilder.AddExpandingVerticalSpacer();
-                });
-            });
-        });
-
-        var layout = outerHStack.GetComponent<LayoutElement>();
-        if (layout != null)
-        {
-            layout.preferredHeight = 600;
-            layout.flexibleHeight = 0;
-        }
+                pb.AddExpandingVerticalSpacer();
+                pb.AddLabel("Select a filter to edit");
+                pb.AddExpandingVerticalSpacer();
+                return;
+            }
+            pb.VScrollView(detailBuilder => PrintSettings(detailBuilder, key, filter, rebuildAll));
+        }, 200f);
     }
 
     private void PrintSettings(UIPanelBuilder builder, string key, LocomotiveFilter filter, Action rebuildAll)
@@ -94,19 +147,28 @@ public class NotEnoughRosters : SingletonPluginBase<NotEnoughRosters>, IModTabHa
             h.AddLabel("Name:");
             h.AddInputField(key, newKey =>
             {
-                if (string.IsNullOrEmpty(newKey) || newKey == key) return;
-                _rosterFilters.Remove(key);
-                _rosterFilters[newKey] = filter;
+                if (string.IsNullOrEmpty(newKey) || newKey == key || _rosterFilters.ContainsKey(newKey)) return;
+                SetFilterOrder(_rosterFilters.Select(kvp =>
+                    kvp.Key == key ? new KeyValuePair<string, LocomotiveFilter>(newKey, filter) : kvp));
                 _selectedFilterState.Value = newKey;
-                SaveRoasters();
                 rebuildAll.Invoke();
             }).Width(200f);
             h.Spacer();
+            h.AddButtonCompact("Move Up", () =>
+            {
+                MoveFilter(key, -1);
+                rebuildAll.Invoke();
+            }).Tooltip("Move Up", "Show this section earlier in the roster window");
+            h.AddButtonCompact("Move Down", () =>
+            {
+                MoveFilter(key, 1);
+                rebuildAll.Invoke();
+            }).Tooltip("Move Down", "Show this section later in the roster window");
+            h.Spacer(8f);
             h.AddButtonCompact("Remove Filter", () =>
             {
-                _rosterFilters.Remove(key);
+                SetFilterOrder(_rosterFilters.Where(kvp => kvp.Key != key));
                 _selectedFilterState.Value = _rosterFilters.Keys.FirstOrDefault();
-                SaveRoasters();
                 rebuildAll.Invoke();
             });
         }).Height(30f);
@@ -231,21 +293,50 @@ public class NotEnoughRosters : SingletonPluginBase<NotEnoughRosters>, IModTabHa
         SaveRoasters();
     }
 
+#if RR2026
+    public void OnEnable()
+#else
     public override void OnEnable()
+#endif
     {
-        var harmony = new Harmony(_modDefinition.Id);
+        var harmony = new Harmony(HarmonyId);
         harmony.PatchCategory("NotEnoughRosters");
     }
 
+#if RR2026
+    public void OnDisable()
+#else
     public override void OnDisable()
+#endif
     {
-        var harmony = new Harmony(_modDefinition.Id);
+        var harmony = new Harmony(HarmonyId);
         harmony.UnpatchCategory("NotEnoughRosters");
+    }
+
+    // The roster panel shows sections in filter order, so rebuild the shared dictionary in place:
+    // Dictionary.Remove + add would reuse the freed slot and shuffle the order.
+    private void SetFilterOrder(IEnumerable<KeyValuePair<string, LocomotiveFilter>> entries)
+    {
+        var ordered = entries.ToList();
+        _rosterFilters.Clear();
+        foreach (var kvp in ordered)
+            _rosterFilters[kvp.Key] = kvp.Value;
+        SaveRoasters();
+    }
+
+    private void MoveFilter(string key, int offset)
+    {
+        var entries = _rosterFilters.ToList();
+        var index = entries.FindIndex(kvp => kvp.Key == key);
+        var target = index + offset;
+        if (index < 0 || target < 0 || target >= entries.Count) return;
+        (entries[index], entries[target]) = (entries[target], entries[index]);
+        SetFilterOrder(entries);
     }
 
     private void SaveRoasters()
     {
-        var file = Path.Combine(_modDefinition.Directory, "trains.json");
+        var file = Path.Combine(_directory, "trains.json");
         var json = JsonConvert.SerializeObject(_rosterFilters, Formatting.Indented);
         File.WriteAllText(file, json);
     }

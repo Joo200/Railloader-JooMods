@@ -1,14 +1,26 @@
 using System;
+#if RR2026
+using UI.Windows;
+#else
 using System.Reflection;
 using UI;
 using UI.Common;
+#endif
 using UnityEngine;
+#if !RR2026
 using Object = UnityEngine.Object;
+#endif
 
 namespace NotEnoughRosters.Windows;
 
 internal class WindowHelper
 {
+#if RR2026
+    public static void CreateWindow<TWindow>(Action<TWindow> configure) where TWindow : Component, IBuilderWindow
+    {
+        WindowManager.Shared.CreateWindowWithComponent(configure);
+    }
+#else
     private static ProgrammaticWindowCreator _programmaticWindowCreator;
 
     private static ProgrammaticWindowCreator ProgrammaticWindowCreator
@@ -39,4 +51,5 @@ internal class WindowHelper
             twindow.Sizing);
         if (configure != null) configure(twindow);
     }
+#endif
 }

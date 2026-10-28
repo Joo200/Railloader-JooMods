@@ -1,0 +1,12 @@
+{
+  "identifier": "joo/not-enough-rosters",
+  "version": "1.1.0",
+  "name": "NotEnoughRosters",
+  "author": "Joo",
+  "description": "Splits the engine roster into sections by filters (trains.json).",
+  "scope": "client",
+  "assemblies": ["NotEnoughRosters.dll"],
+  "dependencies": {
+    "required": ["rr/game"]
+  }
+}
