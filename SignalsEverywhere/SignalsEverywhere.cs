@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+#if !RR2026
 using Railloader;
+#endif
 using Serilog;
 using GalaSoft.MvvmLight.Messaging;
 using Game;
@@ -22,27 +24,66 @@ using UI.Builder;
 using UI.Common;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if RR2026
+using SignalsEverywhere.Rr2026;
+using UI.Windows;
+#endif
 using Timer = System.Threading.Timer;
 
 namespace SignalsEverywhere;
 
+#if RR2026
+// Railroader 2026.1: loaded by ModEntryPoint (Rr2026), without Railloader. Mixintos come from the loaded mods' folders
+// (Rr2026/Mixintos), the debug command is a game console handler (Rr2026/SignalDebugCommand), and the mod tab's
+// buttons are /signaldebug subcommands (the game has no mod tabs).
+public class SignalsEverywhere
+{
+    public static SignalsEverywhere Shared { get; private set; } = null!;
+
+    private const string HarmonyId = "joo/signals-everywhere";
+
+    private readonly string _modDirectory;
+    private readonly string _modsDirectory;
+    private readonly Func<string, bool> _isLoaded;
+
+    internal SignalCreator SignalCreator => _signalCreator;
+#else
 public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTabHandler
 {
+#endif
     Serilog.ILogger logger = Log.ForContext<SignalsEverywhere>();
 
     private readonly Timer syncTimer;
     
     private CTCKeyValueObserver? _ctcObserver;
     
+#if !RR2026
     private readonly IModdingContext _moddingContext;
     private readonly IModDefinition _modDefinition;
+#endif
     
     private readonly SignalCreator _signalCreator;
 
+#if RR2026
+    public string ModDirectory => _modDirectory;
+#else
     public string ModDirectory => _modDefinition.Directory;
+#endif
 
     public CTCPanelLayout? PanelLayout { get => field ?? LoadPanelLayout(); private set; }
     
+#if RR2026
+    public SignalsEverywhere(string modDirectory, Func<string, bool> isLoaded)
+    {
+        Shared = this;
+        Messenger.Default.Send(this);
+
+        logger.Information("Started");
+        _modDirectory = modDirectory;
+        _modsDirectory = Path.GetFullPath(Path.Combine(modDirectory, ".."));
+        _isLoaded = isLoaded;
+        _signalCreator = new SignalCreator(this);
+#else
     public SignalsEverywhere(IModdingContext moddingContext, IModDefinition self)
     {
         Messenger.Default.Send(this);
@@ -53,6 +94,7 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         _signalCreator = new SignalCreator(this);
         
         moddingContext.RegisterConsoleCommand(new DebugCommand(_signalCreator));
+#endif
         
         Messenger.Default.Register<GraphDidChangeEvent>(this, _ => RegisterSignals());
         Messenger.Default.Register<CTCFeatureChange>(this, _ => CTCPanel.Shared?.TryRebuild());
@@ -145,6 +187,23 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         }
     }
 
+#if RR2026
+    public void OnEnable()
+    {
+        var harmony = new Harmony(HarmonyId);
+        harmony.PatchCategory("SignalsEverywhere");
+    }
+
+    public void OnDisable()
+    {
+        var harmony = new Harmony(HarmonyId);
+        harmony.UnpatchAll(HarmonyId);
+    }
+
+    private string ModsBaseDirectory => _modsDirectory;
+
+    private IEnumerable<ModMixinto> FindMixintos(string identifier) => Mixintos.Find(_modsDirectory, identifier, _isLoaded);
+#else
     public override void OnEnable()
     {
         var harmony = new Harmony(_modDefinition.Id);
@@ -157,10 +216,15 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
         harmony.UnpatchAll("SignalsEverywhere");
     }
 
+    private string ModsBaseDirectory => _moddingContext.ModsBaseDirectory;
+
+    private IEnumerable<ModMixinto> FindMixintos(string identifier) => _moddingContext.GetMixintos(identifier);
+#endif
+
     public IEnumerable<ModMixinto> GetMixintos(string identifier)
     {
-        var basedir = _moddingContext.ModsBaseDirectory;
-        foreach (var mixinto in _moddingContext.GetMixintos(identifier))
+        var basedir = ModsBaseDirectory;
+        foreach (var mixinto in FindMixintos(identifier))
         {
             var path = Path.GetFullPath(mixinto.Mixinto);
             if (!path.StartsWith(basedir))
@@ -175,8 +239,8 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
     {
         if (baseJson == null) baseJson = new JObject();
         PatchHelper patchHelper = new(baseJson);
-        var basedir = _moddingContext.ModsBaseDirectory;
-        foreach (var mixinto in _moddingContext.GetMixintos(identifier))
+        var basedir = ModsBaseDirectory;
+        foreach (var mixinto in FindMixintos(identifier))
         {
             try
             {
@@ -208,6 +272,35 @@ public class SignalsEverywhere : SingletonPluginBase<SignalsEverywhere>, IModTab
     
     private readonly List<string> _segmentTokens = new();
     
+#if RR2026
+    // The mod tab's "Reload Signal Definitions" and "Rebuild CTCPanel", for /signaldebug.
+    public string ReloadSignals()
+    {
+        if (CTCPanelController.Shared == null)
+        {
+            return "The CTC feature isn't enabled";
+        }
+        try
+        {
+            RegisterSignals();
+            BuildSignals(CTCPanelController.Shared);
+            return "Signals reloaded";
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Error reloading signals");
+            return "Failed to reload signals; see the log";
+        }
+    }
+
+    public string ReloadPanel()
+    {
+        LoadPanelLayout();
+        InitializeCtcPanel();
+        return "CTCPanel reloaded";
+    }
+
+#endif
     public void ModTabDidOpen(UIPanelBuilder builder)
     {
         if (CTCPanelController.Shared == null)

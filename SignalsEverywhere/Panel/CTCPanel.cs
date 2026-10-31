@@ -58,7 +58,11 @@ public class CTCPanel : WindowBase
 
     public void TryRebuild()
     {
-        if (Window.IsShown) Rebuild();
+        // Shared outlives the panel when another game is loaded: a destroyed panel passes the callers' `?.` (a C# null
+        // check, not Unity's), so check here before touching its window.
+        if (this == null) return;
+        var window = Window;
+        if (window != null && window.IsShown) Rebuild();
     }
 
     private void OnDisable()
@@ -117,31 +121,39 @@ public class CTCPanel : WindowBase
 
         builder.HStack(b =>
         {
-            b.AddLabel("Scale:");
+            NoWrap(b.AddLabel("Scale:"));
             b.AddButtonCompact("-", () => Scale = Mathf.Max(0.5f, Scale - 0.1f));
-            b.AddLabel($"{Scale:F1}");
+            NoWrap(b.AddLabel($"{Scale:F1}"));
             b.AddButtonCompact("+", () => Scale = Mathf.Min(2.0f, Scale + 0.1f));
             b.Spacer();
 
-            b.AddLabel("Activate CTC:");
+            NoWrap(b.AddLabel("Activate CTC:"));
             b.AddToggle(() => _storage.SystemMode == SystemMode.CTC,
                 v => _storage.SystemMode = v ? SystemMode.CTC : SystemMode.ABS);
 
             b.Spacer();
-            b.AddLabel("Highlight Schematic:");
+            NoWrap(b.AddLabel("Highlight Schematic:"));
             b.AddToggle(() => PanelPrefs.Highlight, v => PanelPrefs.Highlight = v);
             b.Spacer();
 
-            b.AddLabel("Volume:");
+            NoWrap(b.AddLabel("Volume:"));
             b.AddButtonCompact("-", () => PanelPrefs.SoundLevel = Mathf.Max(0.1f, PanelPrefs.SoundLevel - 0.1f));
-            b.AddLabel(() => $"{PanelPrefs.SoundLevel:F1}", UIPanelBuilder.Frequency.Fast);
+            NoWrap(b.AddLabel(() => $"{PanelPrefs.SoundLevel:F1}", UIPanelBuilder.Frequency.Fast));
             b.AddButtonCompact("+", () => PanelPrefs.SoundLevel = Mathf.Min(1.0f, PanelPrefs.SoundLevel + 0.1f));
-            b.AddLabel("Ring Bell:");
+            NoWrap(b.AddLabel("Ring Bell:"));
             b.AddToggle(() => PanelPrefs.BellSound, v => PanelPrefs.BellSound = v);
-            b.AddLabel("Click Knobs:");
+            NoWrap(b.AddLabel("Click Knobs:"));
             b.AddToggle(() => PanelPrefs.ConfigSound, v => PanelPrefs.ConfigSound = v);
         });
         builder.VScrollView(BuildAllSections);
+    }
+
+    // Railroader 2026.1's rows can squeeze a label narrower than its text ("Volum / e:"): header labels keep one line.
+    private static void NoWrap(RectTransform label)
+    {
+#if RR2026
+        label.TextWrap(TMPro.TextOverflowModes.Overflow, TMPro.TextWrappingModes.NoWrap);
+#endif
     }
 
     private void BuildAllSections(UIPanelBuilder builder) {

@@ -33,9 +33,10 @@ public class PanelMarker : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
     }
     
     public static float ToCanvasValue(float value) {
+        // Inverse of ToMainlineValue, which takes off CanvasMin in the first segment
         if (value < 1)
         {
-            return value * CanvasFirst;
+            return CanvasMin + value * (CanvasFirst - CanvasMin);
         }
 
         if (value < 2)

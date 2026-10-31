@@ -1,0 +1,11 @@
+{
+  "identifier": "joo/signals-everywhere",
+  "version": "1.4.0",
+  "name": "SignalsEverywhere",
+  "author": "Joo",
+  "description": "Adds CTC signals, interlockings and panel controls from mods' signal data.",
+  "assemblies": ["SignalsEverywhere.dll"],
+  "dependencies": {
+    "required": ["rr/game"]
+  }
+}

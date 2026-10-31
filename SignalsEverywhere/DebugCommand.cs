@@ -11,8 +11,13 @@ using Object = UnityEngine.Object;
 
 namespace SignalsEverywhere;
 
+#if RR2026
+// Railroader 2026.1 runs this through Rr2026/SignalDebugCommand (the game's console handler).
+public class DebugCommand(SignalCreator signalCreator)
+#else
 [ConsoleCommand("/signaldebug", "Debugging signal stuff")]
 public class DebugCommand(SignalCreator signalCreator) : IConsoleCommand
+#endif
 {
     public string Execute(string[] components)
     {
@@ -38,6 +43,10 @@ public class DebugCommand(SignalCreator signalCreator) : IConsoleCommand
 
         if (components[1] == "distances")
         {
+#if RR2026
+            // Passenger stops aren't scene objects in Railroader 2026.1.
+            return "Not available on Railroader 2026.1";
+#else
             var stops = Object.FindObjectsOfType<PassengerStop>();
             foreach (var a in stops)
             {
@@ -64,6 +73,7 @@ public class DebugCommand(SignalCreator signalCreator) : IConsoleCommand
             }
 
             return "Successfully dumped all distances from stations to the log.";
+#endif
         }
         return "Unknown command used. Usage: /signaldebug <dump> <signals|panel>";
     }

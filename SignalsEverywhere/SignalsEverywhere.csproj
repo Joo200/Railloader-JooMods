@@ -5,7 +5,8 @@
     <Configurations>Debug;Release;PublishRelease</Configurations>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
-  <ItemGroup>
+  <!-- Legacy Railroader (Railloader, StrangeCustoms). -p:RR=2026 builds for Railroader 2026.1 instead (below). -->
+  <ItemGroup Condition="'$(RR)' != '2026'">
     <GameAssembly Include="Assembly-CSharp" />
     <GameAssembly Include="Core" />
     <GameAssembly Include="Serilog" />
@@ -25,11 +26,27 @@
     <GameAssembly Include="Unity.TextMeshPro"/>
     <GameAssembly Include="Newtonsoft.Json"/>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(RR)' != '2026'">
     <Reference Include="StrangeCustoms">
       <HintPath>$(GameDir)\Mods\StrangeCustoms\Experimental\StrangeCustoms.dll</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+  <!-- Railroader 2026.1: the game's own loader (Info.json, IModEntryPoint), no Railloader or StrangeCustoms (Rr2026/
+       stands in for what SignalsEverywhere used of them), and no Harmony shipped with the game. -->
+  <PropertyGroup Condition="'$(RR)' == '2026'">
+    <DefineConstants>$(DefineConstants);RR2026</DefineConstants>
+    <GameModDir Condition="'$(GameModsDir)' != ''">$(GameModsDir)\$(AssemblyName)</GameModDir>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(RR)' == '2026'">
+    <_GameManaged Include="$(GameDir)\Railroader_Data\Managed\*.dll" Exclude="$(GameDir)\Railroader_Data\Managed\System*.dll;$(GameDir)\Railroader_Data\Managed\Mono*.dll;$(GameDir)\Railroader_Data\Managed\mscorlib.dll;$(GameDir)\Railroader_Data\Managed\netstandard.dll;$(GameDir)\Railroader_Data\Managed\Microsoft*.dll" />
+    <GameAssembly Include="@(_GameManaged->'%(Filename)')" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <Content Include="Info.json" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RR)' != '2026'">
+    <Compile Remove="Rr2026\**" />
+    <None Remove="Info.json" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\CTCPanel-MainLine.json">
