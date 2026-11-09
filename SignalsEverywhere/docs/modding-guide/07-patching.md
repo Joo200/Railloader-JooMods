@@ -117,7 +117,7 @@ SignalsEverywhere records every path a patch changes, then rebuilds only what wa
 
 Two rules follow from this.
 
-**Touch the control point when you patch its module.** In SignalsEverywhere 1.4, when a module is rebuilt and its interlocking, intermediate or crossover was not touched, that component is **deleted**. RailForge prevents this, but under plain Railloader it happens, and on Railroader 2026.1 too. So whenever you patch anything in a module that has one, also touch it. The easiest harmless touch is replacing an array with its current value:
+**Touch the control point when you patch its module.** In SignalsEverywhere 1.4, when a module is rebuilt and its interlocking, intermediate or crossover was not touched, that component is **deleted**. RailForge prevents this, but under plain Railloader it happens, and on Railroader 0.6 too. So whenever you patch anything in a module that has one, also touch it. The easiest harmless touch is replacing an array with its current value:
 
 ```json
 "interlocking": { "switchSets": { "$replace": [ [ "Nuam" ] ] } }
@@ -149,7 +149,7 @@ Before signalling the new track:
 
 ## Known problems
 
-These are bugs in SignalsEverywhere 1.4 with fixes sent upstream. Tetz's SignalsEverywhere Fixes applies the first four at run time, and SignalsEverywhere's 2026.1 build has all of them built in. On Legacy, write your mod so it works without them.
+These are bugs in SignalsEverywhere 1.4 with fixes sent upstream. Tetz's SignalsEverywhere Fixes applies the first four at run time, and SignalsEverywhere's 0.6 build has all of them built in. On Legacy, write your mod so it works without them.
 
 | Problem | Symptom | Workaround | Upstream |
 |---|---|---|---|

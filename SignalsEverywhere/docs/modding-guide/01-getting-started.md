@@ -8,8 +8,8 @@
   - RailForge;
   - FUSE.
   RailForge and FUSE each replace both Railloader and StrangeCustoms, so don't install those alongside them.
-  On Railroader 2026.1 none of these run: the game loads SignalsEverywhere itself (see [Railroader 2026.1](11-railroader-2026.md)).
-- **SignalsEverywhere** (on 2026.1, its 2026.1 build).
+  On Railroader 0.6 none of these run: the game loads SignalsEverywhere itself (see [Railroader 0.6](11-railroader-2026.md)).
+- **SignalsEverywhere** (on 0.6, its 0.6 build).
 - A text editor that understands JSON. SignalsEverywhere ships JSON schemas (`signals.schema.json`, `ctc-panel-layout.schema.json`) in its mod folder. Point your file's `$schema` at them for hints; SignalsEverywhere removes the `$schema` key before it reads the file. Be aware that the schemas in SignalsEverywhere 1.4 reject some valid data, so treat schema errors as hints, not proof.
 
 ## The mod definition
@@ -44,7 +44,7 @@ A mixinto that only applies when another mod is installed:
 "game-graph": [ { "mixinto": "file(signs.json)", "requires": [ "ALW.SceneryAssets" ] } ]
 ```
 
-On 2026.1 the mod file is the game's `Info.json`, with the same `mixintos` object; conditional entries like the one above aren't supported there. See [The mod files](11-railroader-2026.md#the-mod-files).
+On 0.6 the mod file is the game's `Info.json`, with the same `mixintos` object; conditional entries like the one above aren't supported there. See [The mod files](11-railroader-2026.md#the-mod-files).
 
 ## How SignalsEverywhere uses your files
 
@@ -65,12 +65,12 @@ This has two consequences you'll meet again and again:
 
 1. **Dump what's there.** Run `/signaldebug dump signals` in the game console (host only). SignalsEverywhere writes `signal-old.json` (original data) and `signal-patched.json` (after all mods) into its own mod folder. `/signaldebug dump panel` writes `panel-dump.json`. These are your map: real ids, real locations and the exact structure to patch.
 2. **Write your patch.**
-3. **Reload.** SignalsEverywhere's mod tab has **Reload Signal Definitions** and **Rebuild CTCPanel** buttons, so small changes don't need a restart (on 2026.1: `/signaldebug reload` and `/signaldebug rebuild-panel`). Restart the game when something looks stale.
+3. **Reload.** SignalsEverywhere's mod tab has **Reload Signal Definitions** and **Rebuild CTCPanel** buttons, so small changes don't need a restart (on 0.6: `/signaldebug reload` and `/signaldebug rebuild-panel`). Restart the game when something looks stale.
 4. **Check it.** Dump again and compare `signal-patched.json` with what you meant. Then check the game itself: patched data is not proof that a change reached the game (see [Testing and debugging](09-testing-and-debugging.md)).
 5. **Drive it.** Run a train through in both directions, in CTC and in ABS.
 
 ## Finding track ids
 
-Everything is placed by track **segment** ids (like `S4u5`) and switch **node** ids (like `Nuam`). The dumps give you every id the game's signals already use. For new places you need the track graph: get it from a track graph export, or from the `game-graph` file of a mod that changes that area. On 2026.1 the base map's `Map.json` has it (see [The map](11-railroader-2026.md#the-map)); its ids differ from Legacy's in many places.
+Everything is placed by track **segment** ids (like `S4u5`) and switch **node** ids (like `Nuam`). The dumps give you every id the game's signals already use. For new places you need the track graph: get it from a track graph export, or from the `game-graph` file of a mod that changes that area. On 0.6 the base map's `Map.json` has it (see [The map](11-railroader-2026.md#the-map)); its ids differ from Legacy's in many places.
 
 Track ids mean nothing to a reader, so in your notes and commit messages always pair them with a plain name, like `Nuam (Cochran West switch)`.

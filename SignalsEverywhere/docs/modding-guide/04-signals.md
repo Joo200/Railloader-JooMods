@@ -136,10 +136,10 @@ Set it to `null`:
 ```
 
 - **Auto signals**: safe.
-- **Predicate signals**: SignalsEverywhere 1.4 crashes on a `null` predicate signal and skips the rest of that module (fixed by Tetz's SignalsEverywhere Fixes and in the 2026.1 build, pending upstream as PR #5). RailForge refuses the whole module instead. Rather than removing a predicate signal, rewrite it (or move it with `$moveTo`, but never a control point's signal; see [RailForge](08-railforge.md#forward-references)). See [Patching](07-patching.md#known-problems).
+- **Predicate signals**: SignalsEverywhere 1.4 crashes on a `null` predicate signal and skips the rest of that module (fixed by Tetz's SignalsEverywhere Fixes and in the 0.6 build, pending upstream as PR #5). RailForge refuses the whole module instead. Rather than removing a predicate signal, rewrite it (or move it with `$moveTo`, but never a control point's signal; see [RailForge](08-railforge.md#forward-references)). See [Patching](07-patching.md#known-problems).
 
 ## Signals are rebuilt, not edited
 
 When a patch touches a signal at all, SignalsEverywhere deletes the game object and builds a new one. Anything that pointed at the old one keeps pointing at a deleted object unless it is rebuilt too. That includes interlocking outlets (`nextSignal`) and predicate heads (`nextCtcSignal`) in other modules. Such a stale pointer counts as "no next signal", so the signal behind it is stuck at Approach.
 
-So whenever you change a signal, also touch everything that names it. [Patching](07-patching.md#what-gets-rebuilt) has the full rule. SignalsEverywhere's 2026.1 build relinks these pointers after every build, but touching them costs nothing and keeps the mod working with 1.4.
+So whenever you change a signal, also touch everything that names it. [Patching](07-patching.md#what-gets-rebuilt) has the full rule. SignalsEverywhere's 0.6 build relinks these pointers after every build, but touching them costs nothing and keeps the mod working with 1.4.

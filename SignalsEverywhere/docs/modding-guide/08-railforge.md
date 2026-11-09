@@ -2,11 +2,11 @@
 
 RailForge replaces Railloader and StrangeCustoms: it loads Railloader-style mods, including SignalsEverywhere, and adds its own handling for signal mods. Most Legacy players use it, so test under it. It changes three things.
 
-RailForge is Legacy only. On Railroader 2026.1 none of this applies: see [Without RailForge](11-railroader-2026.md#without-railforge).
+RailForge is Legacy only. On Railroader 0.6 none of this applies: see [Without RailForge](11-railroader-2026.md#without-railforge).
 
 ## It keeps untouched control points
 
-Under RailForge, patching part of a module no longer deletes an interlocking, intermediate or crossover you didn't touch (see [What gets rebuilt](07-patching.md#what-gets-rebuilt)). Keep touching them anyway, so your mod works under plain Railloader and on Railroader 2026.1 too.
+Under RailForge, patching part of a module no longer deletes an interlocking, intermediate or crossover you didn't touch (see [What gets rebuilt](07-patching.md#what-gets-rebuilt)). Keep touching them anyway, so your mod works under plain Railloader and on Railroader 0.6 too.
 
 ## It checks every patched module first
 

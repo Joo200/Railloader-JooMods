@@ -119,4 +119,4 @@ For a new section, you can write plain elements. But if two mods add to the same
 
 ## Checking the panel
 
-Use **Dump CTCPanel** in SignalsEverywhere's mod tab (or `/signaldebug dump panel`) to write the merged layout to `panel-dump.json` in SignalsEverywhere's folder. If the layout can't be read at all, SignalsEverywhere writes what it had to `ctcpanel-failed.json` and the panel won't open. **Rebuild CTCPanel** reloads the layout without restarting. On 2026.1 these are console commands: `/signaldebug dump panel` and `/signaldebug rebuild-panel`.
+Use **Dump CTCPanel** in SignalsEverywhere's mod tab (or `/signaldebug dump panel`) to write the merged layout to `panel-dump.json` in SignalsEverywhere's folder. If the layout can't be read at all, SignalsEverywhere writes what it had to `ctcpanel-failed.json` and the panel won't open. **Rebuild CTCPanel** reloads the layout without restarting. On 0.6 these are console commands: `/signaldebug dump panel` and `/signaldebug rebuild-panel`.

@@ -133,7 +133,7 @@ Between two control points with no intermediate signals, you still need the bloc
 
 The control points at each end must name the intermediate's end blocks in their outlets, and their outlets' `nextSignal` should be the first intermediate signal in that direction. The links go both ways: if you add or move a signal on the line, update the intermediate and the control points.
 
-**The stock intermediates on a feature object.** A few of the game's intermediates (between Whittier and Bryson) sit on the feature object instead of in a module, so they can't be patched. When you add a control point next to one, it keeps pointing at the old signal. Tetz's SignalsEverywhere Fixes relinks it (pending upstream as PR #8), and so does the 2026.1 build. Without either, avoid putting a new control point at the end of one of those intermediates.
+**The stock intermediates on a feature object.** A few of the game's intermediates (between Whittier and Bryson) sit on the feature object instead of in a module, so they can't be patched. When you add a control point next to one, it keeps pointing at the old signal. Tetz's SignalsEverywhere Fixes relinks it (pending upstream as PR #8), and so does the 0.6 build. Without either, avoid putting a new control point at the end of one of those intermediates.
 
 ## Crossovers
 

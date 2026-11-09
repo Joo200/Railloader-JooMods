@@ -17,7 +17,7 @@
 - `/signaldebug dump signals`: same as Dump Signals.
 - `/signaldebug dump panel`: same as Dump CTCPanel.
 
-On Railroader 2026.1 there's no mod tab: `/signaldebug reload`, `rebuild-panel` and `show-panel` stand in for the buttons, and there's no Blocks highlight (see [Tools on 2026.1](11-railroader-2026.md#tools-on-20261)).
+On Railroader 0.6 there's no mod tab: `/signaldebug reload`, `rebuild-panel` and `show-panel` stand in for the buttons, and there's no Blocks highlight (see [Tools on 0.6](11-railroader-2026.md#tools-on-06)).
 
 **Files** in SignalsEverywhere's mod folder:
 
@@ -61,7 +61,7 @@ For every control point you add or change:
 | The AE stops at a red signal, then passes it at 15 mph (or passes at once if it was stopped close to it). | Stop and proceed: the signal isn't in a module with an interlocking, so the AE treats it as an intermediate signal. That's right for block signals; for an absolute signal, see [A signal on its own](05-control-points.md#a-signal-on-its-own). |
 | Signals near a map mod's new or moved track never work, or stock signals there show odd aspects. | The map mod removed or re-laid track the stock signals stand on. See [Map mods that change stock track](07-patching.md#map-mods-that-change-stock-track). |
 | A control point's lever does nothing ("no route"). | No route matches the current switch positions, or `switchFilters` don't line up with `switchSets`. |
-| A control point vanished after a patch (plain Railloader or 2026.1). | You patched its module without touching its interlocking/intermediate. |
+| A control point vanished after a patch (plain Railloader or 0.6). | You patched its module without touching its interlocking/intermediate. |
 | A block never shows occupied. | A span's ends don't connect along the track. Try measuring one end from the other end of its segment. |
 | A block shows occupied with no train. | It overlaps a hand-thrown switch, or another train's block. Check with the Blocks highlight. |
 | A signal faces the wrong way. | Its location is measured from the wrong end. |

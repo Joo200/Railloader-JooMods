@@ -148,9 +148,9 @@ Condition: `{ "path": "...", "comparison": "Equals" | "NotEquals" | "StartsWith"
 - Signals naming another control point go in a module after it.
 - Keep `$find` on fields every item has.
 - Check the game, not just `signal-patched.json`. Under RailForge, read `## Signal authoring`.
-- On Railroader 2026.1, check every track id and module key against the 2026.1 dump and `Map.json`, even ones Legacy had.
+- On Railroader 0.6, check every track id and module key against the 0.6 dump and `Map.json`, even ones Legacy had.
 
-## Railroader 2026.1
+## Railroader 0.6
 
 | File | Holds |
 |---|---|
@@ -159,3 +159,5 @@ Condition: `{ "path": "...", "comparison": "Equals" | "NotEquals" | "StartsWith"
 | `map-feature-gates.json` | Ties modules to a map feature (read by SignalsEverywhere itself). |
 
 Console (host): `/signaldebug dump signals|panel`, `reload`, `rebuild-panel`, `show-panel`.
+
+Pitfalls ([details](11-railroader-2026.md#pitfalls-on-06)): new control points in modules before the signals that name them; locations 5 cm or more inside segment ends; `thrownSwitchesSetOccupied` can't be patched on a stock block; an intermediate's end blocks are outlet blocks; no blocks in outlets where cars stand.

@@ -120,7 +120,7 @@ Points to notice:
 
 ## Example 3: adding a junction to an existing control point
 
-The Robinson Gap mine lead joins the main line just west of Alarka Jct West (`aj-w`). A real railroad would make the new switch part of the existing control point, worked from the same lever. On Legacy this needs Tetz's SignalsEverywhere Fixes, because `aj-w` shares a module with `aj-e` in the base game; the Fixes mod moves it into its own module, `AJ-W`. On Railroader 2026.1 the base game already has the `AJ-W` module.
+The Robinson Gap mine lead joins the main line just west of Alarka Jct West (`aj-w`). A real railroad would make the new switch part of the existing control point, worked from the same lever. On Legacy this needs Tetz's SignalsEverywhere Fixes, because `aj-w` shares a module with `aj-e` in the base game; the Fixes mod moves it into its own module, `AJ-W`. On Railroader 0.6 the base game already has the `AJ-W` module.
 
 ### The interlocking: add a switch set, double the routes
 

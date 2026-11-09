@@ -18,7 +18,7 @@ It's written for mod authors who are comfortable editing JSON. You don't need to
 8. [RailForge](08-railforge.md): its extra checks and how to pass them.
 9. [Testing and debugging](09-testing-and-debugging.md): tools, files and a symptom checklist.
 10. [Worked examples](10-examples.md): a signal-only control point, a passing siding, and a junction added to an existing control point.
-11. [Railroader 2026.1](11-railroader-2026.md): the game's own mod loader, the new map, your own signal milestone, and porting a Legacy mod.
+11. [Railroader 0.6](11-railroader-2026.md): the game's own mod loader, the new map, your own signal milestone, and porting a Legacy mod.
 
 [Quick reference](reference.md): every property and patch instruction on one page.
 
@@ -27,7 +27,7 @@ It's written for mod authors who are comfortable editing JSON. You don't need to
 Written against SignalsEverywhere 1.4 (October 2026), for both versions of the game:
 
 - **Legacy** (Railroader 2025.1 and earlier), with Railloader, RailForge or FUSE. Some behavior described here is a bug with a fix waiting to be merged; those spots are marked, with a workaround. [Tetz's SignalsEverywhere Fixes](https://www.nexusmods.com/railroader/mods/1807) applies most of those fixes at run time, but write your mod so it works without it.
-- **Railroader 2026.1**, with SignalsEverywhere's 2026.1 build, which has those fixes built in. The signal data is the same; what's different (the mod files, the map, the tools) is in [Railroader 2026.1](11-railroader-2026.md). Chapters 1 to 10 mark the other places where 2026.1 differs.
+- **Railroader 0.6**, with SignalsEverywhere's 0.6 build, which has those fixes built in. The signal data is the same; what's different (the mod files, the map, the tools) is in [Railroader 0.6](11-railroader-2026.md). Chapters 1 to 10 mark the other places where 0.6 differs.
 
 ## Credits
 

@@ -16,7 +16,7 @@ The same point can be written from either end: on a 100 m segment, `20 from Star
 
 **For signals, the end you measure from also sets which way the signal faces.** The signal faces the end you measured from, so it's read by trains coming from that end. Measure a signal's location from the end trains approach it from.
 
-A location must lie inside its segment. A distance longer than the segment is an error (RailForge refuses the whole module), and so is a segment id that doesn't exist. If another mod changes the track, segment lengths and ids can change under you. See [RailForge](08-railforge.md).
+A location must lie inside its segment. A distance longer than the segment is an error (RailForge refuses the whole module; on 0.6 that span is dropped, even when it's a millimetre too long, so keep 5 cm inside the ends), and so is a segment id that doesn't exist. If another mod changes the track, segment lengths and ids can change under you. See [RailForge](08-railforge.md).
 
 ## Blocks
 
@@ -83,4 +83,4 @@ Anything that still names it (a signal, an outlet, an intermediate) needs changi
 
 SignalsEverywhere's mod tab has a **Blocks** dropdown. Pick a block and its spans are highlighted on the track. Use it to check every new block before you test with trains.
 
-Railroader 2026.1 has no mod tabs, so there's no highlight there: put a car on the block and watch its panel light.
+Railroader 0.6 has no mod tabs, so there's no highlight there: put a car on the block and watch its panel light.
